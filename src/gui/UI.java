@@ -23,12 +23,8 @@ public class UI extends JPanel implements ActionListener {
  
     public UI() {
         super(new GridBagLayout());
-        try {
-			log = new Logger();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		log = new Logger();
+		
         textField = new JTextField(20);
         textField.addActionListener(this);
  
@@ -39,7 +35,6 @@ public class UI extends JPanel implements ActionListener {
         //Add Components to this panel.
         GridBagConstraints c = new GridBagConstraints();
         c.gridwidth = GridBagConstraints.REMAINDER;
-        System.out.println(c.weightx);
  
         c.fill = GridBagConstraints.BOTH;
         c.weightx = 1.0;
@@ -56,12 +51,7 @@ public class UI extends JPanel implements ActionListener {
         if(text.equals(""))
         	return;
         textField.setText("");
-        try {
-			log.in(text);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		log.in(text);
         textArea.append(text + "\n");
         
         //Make sure the new text is visible, even if there
@@ -93,12 +83,7 @@ public class UI extends JPanel implements ActionListener {
     		@Override
     		public void windowClosing(WindowEvent e) {
     			UI ui = (UI)((JFrame) e.getSource()).getContentPane().getComponents()[0];
-    			try {
-					ui.log.close();
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
+				ui.log.close();
     		}
     	};
     	return l;
@@ -112,6 +97,5 @@ public class UI extends JPanel implements ActionListener {
                 createAndShowGUI();
             }
         });
-        System.out.println("hello world");
     }
 }
