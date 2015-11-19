@@ -6,6 +6,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
+import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.Enumeration;
@@ -15,6 +16,8 @@ import util.Logger;
 public class Client extends Thread {
 	DatagramSocket socket;
 	Logger log;
+	boolean connected = false;
+	SocketAddress server;
 	
 	public void broadcast() {
 		try {
@@ -58,7 +61,9 @@ public class Client extends Thread {
 				attempts++;
 				socket.receive(packet);
 				onReceipt(packet);
+				server = packet.getSocketAddress();
 				attempts = 5;
+				connected = true;
 			} catch (IOException e){}
 		}
 	}
@@ -75,13 +80,35 @@ public class Client extends Thread {
 		  log = new Logger();
 		} catch(Exception e) {
 			e.printStackTrace();
+		}int i =0;
+		while( i<10) {
+			connected = false;
+		while(!connected) {
+			broadcast();
+			receive();
 		}
-		broadcast();
-		receive();
+		byte[] message = "hello world".getBytes();
+		DatagramPacket test = new DatagramPacket(message, message.length, server);
+		try {
+			socket.send(test);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		try {
+			Thread.sleep(1000L);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			break;
+		}
+		i++;
+	}
 		log.close();
 	}
 	
 	public static void main(String[] args) {
-		new Client().start();
+		Client c = new Client();
+		c.start();
 	}
 }

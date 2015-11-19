@@ -23,7 +23,7 @@ public class Server extends Thread {
 				String message = new String(packet.getData()).trim();
 				log.out("Message was: " + message);
 				if(message.equals("CONNECTION_REQUEST")) {
-					byte[] res = "ACK{}".getBytes();
+					byte[] res = ("ACK{'you':'"+ packet.getSocketAddress() +"'}").getBytes();
 					DatagramPacket response = new DatagramPacket(res,res.length);
 					response.setSocketAddress(packet.getSocketAddress());
 					socket.send(response);
