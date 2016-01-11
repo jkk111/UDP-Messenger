@@ -1,4 +1,4 @@
-package gui;
+package GUI;
 
 /*
  * Based heavily on oracle textdemo.java
