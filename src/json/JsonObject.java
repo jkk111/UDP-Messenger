@@ -36,6 +36,15 @@ public class JsonObject {
 		return result;
 	}
 	
+	public String get(String key) {
+		for(int i = 0 ; i < pairs.size(); i++) {
+			if(pairs.get(i).key.equals(key)) {
+				return (String) pairs.get(i).value;
+			}
+		}
+		return null;
+	}
+	
 	public static void main(String args[]) {
 		String[] vals = { "test", "1337", "hello", "world", "pop", "rocks" };
 		ArrayList<ArrayList<String>> test = new ArrayList<ArrayList<String>>();

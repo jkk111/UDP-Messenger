@@ -8,9 +8,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Hashtable;
 
-import util.sendingFinished;
+import util.FinishedSending;
 
-public class Server extends Node implements sendingFinished {
+public class Server extends Node implements FinishedSending {
 	Hashtable<String, ArrayList<Sender>> connections;
 	Hashtable<String, InetSocketAddress> clients;
 	public static final int DEFAULT_PORT = 50001;
@@ -27,7 +27,7 @@ public class Server extends Node implements sendingFinished {
 		super();
 	}
 	
-	public void finishedSending(boolean success) {
+	public void sendingFinished(boolean success) {
 		
 	}
 	

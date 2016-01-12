@@ -8,6 +8,7 @@ package GUI;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -15,16 +16,19 @@ import java.util.Date;
 import javax.swing.*;
 
 import util.Logger;
+import util.MessageReceived;
+import util.MessageSend;
  
-public class UI extends JPanel implements ActionListener {
+public class UI extends JPanel implements ActionListener, MessageReceived {
     protected JTextField textField;
     protected JTextArea textArea;
     public Logger log;
+    MessageSend host;
  
-    public UI() {
+    public UI(MessageSend host) {
         super(new GridBagLayout());
 		log = new Logger();
-		
+		this.host = host;
         textField = new JTextField(20);
         textField.addActionListener(this);
  
@@ -44,15 +48,28 @@ public class UI extends JPanel implements ActionListener {
         c.weighty = 0;
         c.fill = GridBagConstraints.HORIZONTAL;
         add(textField, c);
+        JFrame frame = new JFrame("TextDemo");
+        frame.addWindowListener(closeHandler());
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.add(this);
+        frame.pack();
+        frame.setVisible(true);
+    }
+    
+    public void receivedMessage(String message) {
+    	log.out("Adding message " + message +" to UI");
+    	textArea.append(">> " + message +"\n");
+        textArea.setCaretPosition(textArea.getDocument().getLength());
     }
  
     public void actionPerformed(ActionEvent evt) {
         String text = textField.getText();
         if(text.equals(""))
         	return;
+        host.sendMessage(textField.getText(), new InetSocketAddress("localhost", 50000));
         textField.setText("");
 		log.in(text);
-        textArea.append(text + "\n");
+        textArea.append("<< " + text + "\n");
         
         //Make sure the new text is visible, even if there
         //was a selection in the text area.
@@ -71,7 +88,7 @@ public class UI extends JPanel implements ActionListener {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
  
         //Add contents to the window.
-        frame.add(new UI());
+        frame.add(new UI(null));
  
         //Display the window.
         frame.pack();

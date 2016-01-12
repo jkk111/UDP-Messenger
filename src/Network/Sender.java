@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import util.Logger;
-import util.sendingFinished;
+import util.FinishedSending;
 
 public class Sender extends Thread {
 	public static final int MAX_PACKET_SIZE = 128;
@@ -25,12 +25,13 @@ public class Sender extends Thread {
 	String content;
 	boolean resend;
 	boolean isFinal;
-	sendingFinished onFinish;
+	FinishedSending onFinish;
 	Logger l;
 	int index = 0;
 	int packetsSent = 0;
 	int timeouts = 0;
 	InetSocketAddress dest;
+	String recipient;
 	public Sender(InetSocketAddress destination, String content) throws SocketException {
 		this(destination, content, new DatagramSocket());
 	}
@@ -46,9 +47,30 @@ public class Sender extends Thread {
 		this.dest = destination;
 	}
 	
-	public Sender(InetSocketAddress destination, String content, DatagramSocket socket, sendingFinished f) throws SocketException {
+	/*
+	 * Overloads for the above methods that allow the use of a callback on completion
+	 */
+	
+	public Sender(InetSocketAddress destination, String content, DatagramSocket socket, FinishedSending f) throws SocketException {
 		this(destination, content, socket);
 		onFinish = f;
+	}
+	
+	public Sender(InetSocketAddress destination, String content, FinishedSending f) throws SocketException {
+		this(destination, content);
+		onFinish = f;
+	}
+	
+	public Sender(InetSocketAddress destination, String content, String recipient, DatagramSocket socket, FinishedSending f) throws SocketException {
+		this(destination, content, socket);
+		onFinish = f;
+		this.recipient = recipient;
+	}
+	
+	public Sender(InetSocketAddress destination, String content, String recipient, FinishedSending f) throws SocketException {
+		this(destination, content);
+		onFinish = f;
+		this.recipient = recipient;
 	}
 	
 	public void run() {
@@ -58,8 +80,10 @@ public class Sender extends Thread {
 				int end = index + MAX_PACKET_SIZE;
 				if(end > content.length())
 					end = content.length();
-				byte[] tmp = content.substring(index, end).getBytes();
-				packet = new DatagramPacket(tmp, tmp.length, dest);
+				String tmp = content.substring(index, end);
+				tmp = "{ \"dest\": \"" + recipient + "\", \"message\": \"" + tmp + "\" }";
+				l.out(tmp);
+				packet = new DatagramPacket(tmp.getBytes(), tmp.length(), dest);
 			}
 			try {
 				l.out("Sending packet: " + new String(packet.getData()));
@@ -102,12 +126,12 @@ public class Sender extends Thread {
 				l.errout("Could not communicate with the remote host");
 			}
 			if(onFinish != null) {
-				onFinish.finishedSending(false);
+				onFinish.sendingFinished(false);
 			}
 		} else {
 			l.out("Message sent successfully");
 			if(onFinish != null) {
-				onFinish.finishedSending(true);
+				onFinish.sendingFinished(true);
 			}
 		}
 		l.close();

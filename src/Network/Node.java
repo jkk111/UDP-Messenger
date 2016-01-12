@@ -38,6 +38,8 @@ public abstract class Node extends Thread {
 					l.out("Packet contents: " + new String(packet.getData()).trim());
 					onReceipt(packet);
 				} catch (Exception e) {
+					e.printStackTrace();
+					l.err(e.getMessage());
 					if(!awaitingResponse) {
 						l.out("nothing");
 						onReceipt(null);
