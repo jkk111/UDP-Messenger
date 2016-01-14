@@ -11,6 +11,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
@@ -21,11 +22,13 @@ import java.util.Date;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 
+import interfaces.ImageSelect;
 import interfaces.MessageReceived;
 import interfaces.MessageSend;
+import util.ImageChooser;
 import util.Logger;
  
-public class GUI extends JPanel implements ActionListener, MessageReceived {
+public class GUI extends JPanel implements ActionListener, MessageReceived, ImageSelect {
     protected JTextField textField;
     protected JTextArea textArea;
     DefaultListModel model;
@@ -45,8 +48,6 @@ public class GUI extends JPanel implements ActionListener, MessageReceived {
         JScrollPane pane = new JScrollPane(list);
         for (int i = 0; i < 15; i++)
           model.addElement("C" + i);
-         
- 
         textArea = new JTextArea(10, 20);
         textArea.setEditable(false);
         JScrollPane scrollPane = new JScrollPane(textArea);
@@ -65,12 +66,17 @@ public class GUI extends JPanel implements ActionListener, MessageReceived {
         c.weightx = 0.3;
         c.gridwidth = 1;
         add(pane, c);
-        c.gridwidth = 3;
+        c.gridwidth = 2;
         c.gridx = 0;
         c.gridy = 1;
         c.weightx = 1;
         c.weighty = 0; 
         add(textField, c);
+        JButton button = new JButton("Image");
+        button.addActionListener(new ImageChooser(this));
+        c.gridx = 2;
+        c.gridwidth = 1;
+        add(button, c);
         
         frame.addWindowListener(closeHandler());
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -114,6 +120,21 @@ public class GUI extends JPanel implements ActionListener, MessageReceived {
         //Make sure the new text is visible, even if there
         //was a selection in the text area.
         textArea.setCaretPosition(textArea.getDocument().getLength());
+    }
+    
+    public void sendImage(String path) {
+    	byte[] image = null;
+    	String ext = path.substring(path.lastIndexOf(".") + 1);
+		try {
+			BufferedImage originalImage = ImageIO.read(new File(path));
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			ImageIO.write(originalImage, ext, baos);
+			baos.flush();
+			image = baos.toByteArray();
+			baos.close();
+		} catch (IOException e) {}
+		log.out("sending image to client to send");
+		host.sendImage(image, "L1");
     }
  
     /**

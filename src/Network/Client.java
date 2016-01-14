@@ -17,9 +17,7 @@ import javax.imageio.ImageIO;
 
 import GUI.GUI;
 import Network.*;
-import interfaces.FinishedSending;
-import interfaces.MessageRead;
-import interfaces.MessageSend;
+import interfaces.*;
 import json.JsonObject;
 import json.Parser;
 import util.ClientNode;
@@ -97,6 +95,7 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	
 	public static void main(String args[]) {
 		Client c = new Client("L1", true);
+		c.clients.add(new ClientNode(new InetSocketAddress("localhost", 50000), "L1"));
 		c.start();
 	}
 
@@ -129,6 +128,15 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 			e.printStackTrace();
 		}
 		(new Sender(m.dest,m.image, m.recipient, m.sender, this)).start();
+	}
+	
+	
+	public void sendImage(byte[] image, String dest) {
+		SocketAddress addr = lookupClient(dest);
+		if(addr == null)
+			return;
+		
+		(new Sender(addr, image, dest, this.id, this)).start();
 	}
 	
 	public ArrayList<ClientNode> getClients() {
