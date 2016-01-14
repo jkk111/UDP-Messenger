@@ -1,11 +1,10 @@
 package util;
-
-import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 public class ClientNode {
-	InetSocketAddress address;
+	SocketAddress address;
 	String id;
-	public ClientNode(InetSocketAddress address, String id) {
+	public ClientNode(SocketAddress address, String id) {
 		this.address = address;
 		this.id = id;
 	}

@@ -7,11 +7,11 @@ import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
+import interfaces.MessageRead;
+import interfaces.MessageSend;
 import json.JsonObject;
 import json.Parser;
 import util.Logger;
-import util.MessageRead;
-import util.MessageSend;
 
 public class Receiver {
 	Hashtable<SocketAddress, ArrayList<String>> connections;
@@ -25,7 +25,6 @@ public class Receiver {
 	
 	public void add(DatagramPacket p) {
 		String isEnd = Parser.parse(new String(p.getData())).get("end");
-		l.err(p.getSocketAddress().toString() + ":" + new String(p.getData()));
 		if(isEnd != null && isEnd.equals("true")) {
 			String message = "";
 			ArrayList<String> data = connections.get(p.getSocketAddress());
@@ -39,10 +38,12 @@ public class Receiver {
 			}
 			if(dest.equals(parent.getClientId()))
 				parent.messageReceived(message, sender);
-			else {
+			else if(parent.isLaptop()){
 				InetSocketAddress addr = new InetSocketAddress(p.getAddress(), 50000);
 				l.out("made: " + addr.toString());
 				parent.forwardMessage(addr, message, dest, sender);
+			} else {
+				l.err("packet not for this phone, dropping");
 			}
 			connections.remove(p.getSocketAddress());
 			return;

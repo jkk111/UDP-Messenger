@@ -34,6 +34,7 @@ public class Laptop extends Thread {
 			s.send(p);
 			DatagramPacket response = new DatagramPacket(new byte[65536], 65536);
 			s.receive(response);
+			s.close();
 			String id = Parser.parse(new String(response.getData())).get("id");
 			Laptop l = new Laptop(id);
 			l.start();

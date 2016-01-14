@@ -12,8 +12,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import interfaces.FinishedSending;
 import util.Logger;
-import util.FinishedSending;
 
 public class Sender extends Thread {
 	public static final int MAX_PACKET_SIZE = 128;

@@ -8,8 +8,8 @@ import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
+import interfaces.FinishedSending;
 import json.JsonObject;
-import util.FinishedSending;
 import util.Logger;
 
 public class Sender2 extends Thread {

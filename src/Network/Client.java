@@ -11,19 +11,20 @@ import java.util.Queue;
 
 import GUI.GUI;
 import Network.*;
+import interfaces.FinishedSending;
+import interfaces.MessageRead;
+import interfaces.MessageSend;
 import json.JsonObject;
 import json.Parser;
 import util.ClientNode;
-import util.FinishedSending;
 import util.Message;
-import util.MessageRead;
-import util.MessageSend;
 
 public class Client extends Node implements FinishedSending, MessageSend, MessageRead {
 	public static final int DEFAULT_PORT = 50000;
 	String toSend;
 	boolean sending = false;
 	ArrayList<Message> pendingMessages;
+	ArrayList<ClientNode> clients;
 	GUI gui;
 	boolean isLaptop = false;
 	Receiver receiver;
@@ -52,31 +53,48 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 			pendingMessages = new ArrayList<Message>();
 			gui = new GUI(this);
 			socket = new DatagramSocket(port);
+			l.out("start ADDRESS: " + socket.getLocalSocketAddress());
 			l.out("Starting listener on port: " + port);
 			listener.go();
 			receiver = new Receiver(this);
-		} catch(Exception e) {}
+		} catch(Exception e) {
+			l.err(e.getClass() + "");
+			l.err(e.getMessage() + "");
+		}
 	}
 	
 	public synchronized void onReceipt(DatagramPacket packet) {
-		receiver.add(packet);
-		try {
-			socket.send(new DatagramPacket("OK".getBytes(), 2, packet.getSocketAddress()));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		JsonObject o = Parser.parse(new String(packet.getData()));
+		
+		if(o.get("request") != null) {
+			handleRequest(packet.getSocketAddress());
+		}
+			
+		if(o.get("message") != null || o.get("end") != null) {
+				receiver.add(packet);
+			try {
+				socket.send(new DatagramPacket("OK".getBytes(), 2, packet.getSocketAddress()));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		latch.countDown();
 		this.notify();
 	}
 	
+	public void handleRequest(SocketAddress addr) {
+		l.out("REMOTE ADDRESS: " + socket.getRemoteSocketAddress());
+	}
+	
 	public static void main(String args[]) {
-		Client c = new Client("A1", true);
+		Client c = new Client("L1", true);
 		c.start();
 	}
 
 	@Override
 	public void sendingFinished(boolean success) {
+		l.out("REMOTE ADDRESS: " + socket.getRemoteSocketAddress());
 		// So this will be used to signify that a sender has finished
 		l.out("Sending message " + (success == true ? "completed successfully" : "failed"));
 		sending = false;
@@ -105,10 +123,10 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 			sending = true;
 			l.out("Attempting to send message: " + message);
 			Sender2 sender;
-			sender = new Sender2(dest, message,"C2", id, this);
+			sender = new Sender2(dest, message,"L1", id, this);
 			sender.start();
 		} else {
-			Message m = new Message(message, dest, "C2");
+			Message m = new Message(message, dest, "L1");
 			pendingMessages.add(m);
 		}
 	}
@@ -127,5 +145,10 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	public void forwardMessage(SocketAddress dest, String message, String recipient, String sender) {
 		l.out("in client its: " + dest.toString());
 		(new Sender2(dest, message, recipient, sender, this)).start();
+	}
+
+	@Override
+	public boolean isLaptop() {
+		return isLaptop;
 	}
 }

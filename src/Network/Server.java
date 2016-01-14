@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Hashtable;
 
-import util.FinishedSending;
+import interfaces.FinishedSending;
 
 public class Server extends Node implements FinishedSending {
 	Hashtable<String, ArrayList<Sender>> connections;

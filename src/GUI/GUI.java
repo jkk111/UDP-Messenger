@@ -7,17 +7,23 @@ package GUI;
  
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 
+import interfaces.MessageReceived;
+import interfaces.MessageSend;
 import util.Logger;
-import util.MessageReceived;
-import util.MessageSend;
  
 public class GUI extends JPanel implements ActionListener, MessageReceived {
     protected JTextField textField;
@@ -78,6 +84,22 @@ public class GUI extends JPanel implements ActionListener, MessageReceived {
     	textArea.append(sender + ": " + message +"\n");
         textArea.setCaretPosition(textArea.getDocument().getLength());
     }
+    
+    public void addImage(byte[] image) {
+    	InputStream in = new ByteArrayInputStream(image);
+    	try {
+			BufferedImage bImage = ImageIO.read(in);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+        JLabel label = new JLabel(new ImageIcon(image));
+        JFrame f = new JFrame();
+        f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        f.getContentPane().add(label);
+        f.pack();
+        f.setLocation(200,200);
+        f.setVisible(true);
+    }
  
     public void actionPerformed(ActionEvent evt) {
         String text = textField.getText();
@@ -127,10 +149,27 @@ public class GUI extends JPanel implements ActionListener, MessageReceived {
 	public static void main(String[] args) {
         //Schedule a job for the event dispatch thread:
         //creating and showing this application's GUI.
-        javax.swing.SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                createAndShowGUI();
-            }
-        });
+//        javax.swing.SwingUtilities.invokeLater(new Runnable() {
+//            public void run() {
+//                createAndShowGUI();
+//            }
+//        });
+		GUI gui = new GUI(null);
+		byte[] testImage = null;
+		String imagePath = "kawaii.jpg";
+		try {
+			BufferedImage originalImage = ImageIO.read(new File(imagePath));
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			ImageIO.write(originalImage, "jpg", baos);
+			baos.flush();
+			testImage = baos.toByteArray();
+			baos.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		gui.addImage(testImage);
+		gui.addImage(testImage);
+		gui.addImage(testImage);
     }
 }
