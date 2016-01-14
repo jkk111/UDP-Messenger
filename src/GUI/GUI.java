@@ -19,18 +19,27 @@ import util.Logger;
 import util.MessageReceived;
 import util.MessageSend;
  
-public class UI extends JPanel implements ActionListener, MessageReceived {
+public class GUI extends JPanel implements ActionListener, MessageReceived {
     protected JTextField textField;
     protected JTextArea textArea;
+    DefaultListModel model;
+    JList list;
     public Logger log;
     MessageSend host;
- 
-    public UI(MessageSend host) {
+
+    int counter = 15;
+    public GUI(MessageSend host) {
         super(new GridBagLayout());
 		log = new Logger();
 		this.host = host;
         textField = new JTextField(20);
         textField.addActionListener(this);
+        model = new DefaultListModel();
+        list = new JList(model);
+        JScrollPane pane = new JScrollPane(list);
+        for (int i = 0; i < 15; i++)
+          model.addElement("C" + i);
+         
  
         textArea = new JTextArea(10, 20);
         textArea.setEditable(false);
@@ -38,17 +47,25 @@ public class UI extends JPanel implements ActionListener, MessageReceived {
  
         //Add Components to this panel.
         GridBagConstraints c = new GridBagConstraints();
-        c.gridwidth = GridBagConstraints.REMAINDER;
- 
-        c.fill = GridBagConstraints.BOTH;
-        c.weightx = 1.0;
-        c.weighty = 1.0;
-        add(scrollPane, c);
-        
-        c.weighty = 0;
-        c.fill = GridBagConstraints.HORIZONTAL;
-        add(textField, c);
         JFrame frame = new JFrame("TextDemo");
+        c.gridx = 0;
+        c.gridy = 0;
+        c.weightx = 0.7;
+        c.gridwidth = 2;
+        c.weighty = 1;
+        c.fill = GridBagConstraints.BOTH;
+        add(scrollPane, c);
+        c.gridx = 2;
+        c.weightx = 0.3;
+        c.gridwidth = 1;
+        add(pane, c);
+        c.gridwidth = 3;
+        c.gridx = 0;
+        c.gridy = 1;
+        c.weightx = 1;
+        c.weighty = 0; 
+        add(textField, c);
+        
         frame.addWindowListener(closeHandler());
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.add(this);
@@ -56,9 +73,9 @@ public class UI extends JPanel implements ActionListener, MessageReceived {
         frame.setVisible(true);
     }
     
-    public void receivedMessage(String message) {
+    public void receivedMessage(String message, String sender) {
     	log.out("Adding message " + message +" to UI");
-    	textArea.append(">> " + message +"\n");
+    	textArea.append(sender + ": " + message +"\n");
         textArea.setCaretPosition(textArea.getDocument().getLength());
     }
  
@@ -66,10 +83,11 @@ public class UI extends JPanel implements ActionListener, MessageReceived {
         String text = textField.getText();
         if(text.equals(""))
         	return;
-        host.sendMessage(textField.getText(), new InetSocketAddress("localhost", 50000));
+        if(host != null)
+        	host.sendMessage(textField.getText(), new InetSocketAddress("localhost", 50000));
         textField.setText("");
 		log.in(text);
-        textArea.append("<< " + text + "\n");
+        textArea.append("YOU: " + text + "\n");
         
         //Make sure the new text is visible, even if there
         //was a selection in the text area.
@@ -88,7 +106,7 @@ public class UI extends JPanel implements ActionListener, MessageReceived {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
  
         //Add contents to the window.
-        frame.add(new UI(null));
+        frame.add(new GUI(null));
  
         //Display the window.
         frame.pack();
@@ -99,7 +117,7 @@ public class UI extends JPanel implements ActionListener, MessageReceived {
     	WindowListener l = new WindowAdapter() {
     		@Override
     		public void windowClosing(WindowEvent e) {
-    			UI ui = (UI)((JFrame) e.getSource()).getContentPane().getComponents()[0];
+    			GUI ui = (GUI)((JFrame) e.getSource()).getContentPane().getComponents()[0];
 				ui.log.close();
     		}
     	};

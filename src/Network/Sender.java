@@ -24,6 +24,7 @@ public class Sender extends Thread {
 	AtomicBoolean receivedResponse;
 	String content;
 	boolean resend;
+	boolean isStart;
 	boolean isFinal;
 	FinishedSending onFinish;
 	Logger l;
@@ -32,6 +33,7 @@ public class Sender extends Thread {
 	int timeouts = 0;
 	InetSocketAddress dest;
 	String recipient;
+	boolean isLarge = false;
 	public Sender(InetSocketAddress destination, String content) throws SocketException {
 		this(destination, content, new DatagramSocket());
 	}

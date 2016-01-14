@@ -13,6 +13,7 @@ public abstract class Node extends Thread {
 	boolean awaitingResponse = false;
 	Logger l;
 	Listener listener;
+	String id;
 	public Node() {
 		l = new Logger();
 		latch = new CountDownLatch(1);

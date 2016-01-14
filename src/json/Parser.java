@@ -5,6 +5,9 @@ import java.util.Arrays;
 import util.Logger;
 
 public class Parser {
+	/*
+	 * 
+	 */
 	public static JsonObject parse(String data, String delimiter) {
 		Logger l = new Logger();
 		l.out(data);
@@ -53,10 +56,7 @@ public class Parser {
 	}
 	
 	public static void main(String args[]) {
-		String test = "{\"h\\\"e\\:ll, \\\",o\":\"wor%^*)(%$*^%(TUGUYVOTURVRURCTUR*CRE^RECT&^ld\", \"test\": \"statement\"}";
+		String test = "{ \"h\\\"e\\:ll, \\\",o\":\"wor%^*)(%$*^%(TUGUYVOTURVRURCTUR*CRE^RECT&^ld\", \"test\": \"statement\" }";
 		System.out.print(parse(test).toString("  "));
-//		System.out.println(test);
-//		System.out.println(parse(test).pairs.get(0).key);
-//		System.out.println(parse(test).toString("  "));
 	}
 }

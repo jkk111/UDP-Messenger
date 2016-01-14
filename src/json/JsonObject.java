@@ -2,8 +2,9 @@ package json;
 import java.util.ArrayList;
 
 public class JsonObject {
-	ArrayList<Pair> pairs = new ArrayList<Pair>();
+	ArrayList<Pair> pairs;
 	public JsonObject(ArrayList<ArrayList<String>> data) {
+		pairs = new ArrayList<Pair>();
 		for(int i = 0 ; i < data.size(); i++) {
 			String key = data.get(i).get(0);
 			String value = data.get(i).get(1);
@@ -14,14 +15,18 @@ public class JsonObject {
 		}
 	}
 	
+	public JsonObject() {
+		pairs = new ArrayList<Pair>();
+	}
+	
 	public String toString() {
-		String result = "{";
+		String result = "{ ";
 		for(int i = 0 ; i < pairs.size();i++) {
 			if(i>0)
 				result += ", ";
 			result += pairs.get(i).toString();
 		}
-		result += "}";
+		result += " }";
 		return result;
 	}
 	
@@ -45,6 +50,11 @@ public class JsonObject {
 		return null;
 	}
 	
+	public void add(String key, String value) {
+		Pair tmp = new Pair(key, value);
+		pairs.add(tmp);
+	}
+	
 	public static void main(String args[]) {
 		String[] vals = { "test", "1337", "hello", "world", "pop", "rocks" };
 		ArrayList<ArrayList<String>> test = new ArrayList<ArrayList<String>>();
@@ -59,6 +69,6 @@ public class JsonObject {
 		System.out.println(test.get(1).get(0));
 		System.out.println(test.get(2).get(0));
 		JsonObject json = new JsonObject(test);
-		System.out.println(json.toString("\n"));
+		System.out.println(json.toString());
 	}
 }
