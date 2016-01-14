@@ -3,125 +3,161 @@ package Network;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.util.Date;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Base64;
+
+import javax.xml.bind.DatatypeConverter;
 
 import interfaces.FinishedSending;
+import json.JsonObject;
 import util.Logger;
 
 public class Sender extends Thread {
-	public static final int MAX_PACKET_SIZE = 128;
+	boolean isLarge = false;
+	public static final int MAX_MESSAGE_SIZE = 65000;
 	public static final int MAX_TIMEOUTS = 10;
 	DatagramSocket socket;
-	DatagramPacket packet;
-	CountDownLatch latch;
-	AtomicBoolean receivedResponse;
-	String content;
-	boolean resend;
-	boolean isStart;
-	boolean isFinal;
+	String message = "";
+	DatagramPacket nextPacket;
+	String recipient, sender;
+	SocketAddress dest;
 	FinishedSending onFinish;
 	Logger l;
-	int index = 0;
-	int packetsSent = 0;
-	int timeouts = 0;
-	InetSocketAddress dest;
-	String recipient;
-	boolean isLarge = false;
-	public Sender(InetSocketAddress destination, String content) throws SocketException {
-		this(destination, content, new DatagramSocket());
-	}
-	
-	public Sender(InetSocketAddress destination, String content, DatagramSocket socket) throws SocketException {
-		latch = new CountDownLatch(1);
-		resend = false;
-		isFinal = false;
-		this.socket = socket;
-		socket.setSoTimeout(1000);
-		this.content = content;
+	boolean isImage = false;
+	public Sender(SocketAddress dest, DatagramPacket p, FinishedSending f) {
 		l = new Logger();
-		this.dest = destination;
+		onFinish = f;
+		try {
+			socket = new DatagramSocket();
+		} catch (SocketException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		this.dest = dest;
+		isLarge = false;
+		nextPacket = p;
 	}
 	
-	/*
-	 * Overloads for the above methods that allow the use of a callback on completion
-	 */
-	
-	public Sender(InetSocketAddress destination, String content, DatagramSocket socket, FinishedSending f) throws SocketException {
-		this(destination, content, socket);
+	public Sender(SocketAddress dest, String message, String recipient, String sender, FinishedSending f) {
+		l = new Logger();
+		l.out("sending message to: " + dest.toString());
 		onFinish = f;
-	}
-	
-	public Sender(InetSocketAddress destination, String content, FinishedSending f) throws SocketException {
-		this(destination, content);
-		onFinish = f;
-	}
-	
-	public Sender(InetSocketAddress destination, String content, String recipient, DatagramSocket socket, FinishedSending f) throws SocketException {
-		this(destination, content, socket);
-		onFinish = f;
+		try {
+			socket = new DatagramSocket();
+		} catch (SocketException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		this.dest = dest;
 		this.recipient = recipient;
+		this.sender = sender;
+		if(message.length() > MAX_MESSAGE_SIZE) {
+			isLarge = true;
+			this.message = message;
+		} else {
+			isLarge = false;
+			JsonObject o = new JsonObject();
+			o.add("dest", recipient);
+			o.add("sender", sender);
+			o.add("message", message);
+			nextPacket = new DatagramPacket(o.toString().getBytes(), o.toString().length(), dest);
+		}
 	}
 	
-	public Sender(InetSocketAddress destination, String content, String recipient, FinishedSending f) throws SocketException {
-		this(destination, content);
-		onFinish = f;
+	public Sender(SocketAddress dest, byte[] image, String recipient, String sender, FinishedSending f) {
+		message = DatatypeConverter.printBase64Binary(image);
+		l = new Logger();
+		try {
+			socket = new DatagramSocket();
+		} catch (SocketException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		l.out(""+message.length());
+		this.dest = dest;
 		this.recipient = recipient;
+		this.onFinish = f;
+		this.sender = sender;
+		isLarge = true;
+		isImage = true;
 	}
 	
 	public void run() {
-		l.out("Attempting to send string: \"" + content +"\" to: " + dest.toString());
-		while ((index < content.length() || resend || isFinal ) && timeouts < MAX_TIMEOUTS) {
-			if(!resend && !isFinal) {
-				int end = index + MAX_PACKET_SIZE;
-				if(end > content.length())
-					end = content.length();
-				String tmp = content.substring(index, end);
-				tmp = "{ \"dest\": \"" + recipient + "\", \"message\": \"" + tmp + "\" }";
-				l.out(tmp);
-				packet = new DatagramPacket(tmp.getBytes(), tmp.length(), dest);
-			}
+		try {
+			socket.setSoTimeout(5000);
+		} catch (SocketException e) {
+			e.printStackTrace();
+		}
+		int index = 0;
+		int timeouts = 0;
+		boolean isFinal = false;
+		boolean resend = false;
+		boolean smallPending = !isLarge;
+		if (isLarge) {
+			JsonObject o = new JsonObject();
+			o.add("dest", recipient);
+	        o.add("sender", sender);
+	        int end = Math.min((index + MAX_MESSAGE_SIZE), message.length());
+	        String messageFragment = message.substring(index, end);
+	        if(!isImage)
+	        	o.add("message", messageFragment);
+	        else
+	        	o.add("image", messageFragment);
+	        l.out(messageFragment.length()+"");
+	        nextPacket = new DatagramPacket(o.toString().getBytes(), o.toString().length(), dest);
+		} 
+		while ((index < message.length() || resend || isFinal || smallPending ) && timeouts < MAX_TIMEOUTS) {
 			try {
-				l.out("Sending packet: " + new String(packet.getData()));
-				socket.send(packet);
-				DatagramPacket response = new DatagramPacket(new byte[MAX_PACKET_SIZE], MAX_PACKET_SIZE);
-				socket.receive(response);
-				packetsSent++;
-				l.out("Successfully sent " + packetsSent +" packets");
+				l.out("sending packet");
+				socket.send(nextPacket);
+				DatagramPacket res = new DatagramPacket(new byte[65536], 65536);
+				socket.receive(res);
+				l.out("got response");
+				index += MAX_MESSAGE_SIZE;
+				l.out(index+":"+message.length());
 				timeouts = 0;
 				resend = false;
-				index += MAX_PACKET_SIZE;
-				if(index > content.length() && !isFinal) {
+				if (isLarge && index < message.length()) {
+					int end = Math.min(index + MAX_MESSAGE_SIZE, message.length());
+					String fragment = message.substring(index, end);
+					JsonObject o = new JsonObject();
+					if(!isImage)
+						o.add("message", fragment);
+					else
+						o.add("image", fragment);
+					o.add("dest", recipient);
+					o.add("sender", sender);
+				    nextPacket = new DatagramPacket(o.toString().getBytes(), o.toString().length(), dest);
+				} else if (!isFinal) {
 					isFinal = true;
-					byte[] finalMessage = "END".getBytes();
-					packet = new DatagramPacket(finalMessage, finalMessage.length, dest); 
-				} else if (isFinal)
+					smallPending = false;
+					JsonObject o = new JsonObject();
+					o.add("end", "true");
+					o.add("dest", recipient);
+					o.add("sender", sender);
+				    nextPacket = new DatagramPacket(o.toString().getBytes(), o.toString().length(), dest);
+				} else if (isFinal) {
 					isFinal = false;
-			} catch (IOException e) {
-				if(e instanceof SocketTimeoutException) {
-					l.out("Timeout number " + ++timeouts +" " + new Date().toString());
-					resend = true;
-					if(timeouts > 10) {
-						Thread.currentThread().interrupt();
-					}
-				} else {
-					l.err(e.getMessage());
-					e.printStackTrace();
+					l.out("Should finish now");
 				}
+			} catch (SocketTimeoutException e) {
+				l.out("timeout");
+				timeouts++;
+				resend = true;
+		    } catch (IOException e) {
+				e.printStackTrace();
 			}
 		}
-		sendingDone();
+		l.out(dest.toString());
+		sendingDone(index, timeouts);
 	}
 	
-	public void sendingDone() {
+	public void sendingDone(int index, int timeouts) {
 		if(timeouts >= MAX_TIMEOUTS) {
-			if(index > 0) {
+			if(index > 0 && isLarge) {
 				l.errout("Sending failed");
 			}
 			else {
@@ -136,11 +172,5 @@ public class Sender extends Thread {
 				onFinish.sendingFinished(true);
 			}
 		}
-		l.close();
-	}
-	
-	public static void main(String[] args) throws SocketException {
-		InetSocketAddress tst = new InetSocketAddress("127.0.0.1", 8080);
-		new Sender(tst, "Hello cucks of the world").start();
 	}
 }

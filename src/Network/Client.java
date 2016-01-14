@@ -1,5 +1,9 @@
 package Network;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -9,6 +13,8 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Queue;
 
+import javax.imageio.ImageIO;
+
 import GUI.GUI;
 import Network.*;
 import interfaces.FinishedSending;
@@ -17,6 +23,7 @@ import interfaces.MessageSend;
 import json.JsonObject;
 import json.Parser;
 import util.ClientNode;
+import util.ImageMessage;
 import util.Message;
 
 public class Client extends Node implements FinishedSending, MessageSend, MessageRead {
@@ -51,6 +58,7 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		try {
 			this.id = id;
 			pendingMessages = new ArrayList<Message>();
+			clients = new ArrayList<ClientNode>();
 			gui = new GUI(this);
 			socket = new DatagramSocket(port);
 			l.out("start ADDRESS: " + socket.getLocalSocketAddress());
@@ -70,7 +78,7 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 			handleRequest(packet.getSocketAddress());
 		}
 			
-		if(o.get("message") != null || o.get("end") != null) {
+		if(o.get("message") != null || o.get("end") != null || o.get("image") != null) {
 				receiver.add(packet);
 			try {
 				socket.send(new DatagramPacket("OK".getBytes(), 2, packet.getSocketAddress()));
@@ -102,9 +110,25 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 			System.out.println(pendingMessages.size());
 			Message m = pendingMessages.get(0);
 			pendingMessages.remove(0);
-			Sender2 sender = new Sender2(m.dest, m.message, m.recipient, this.id, this);
+			if(m instanceof ImageMessage) {
+				sendImage((ImageMessage) m);
+				return;
+			}
+			Sender sender = new Sender(m.dest, m.message, m.recipient, this.id, this);
 			sender.start();
 		}
+	}
+	
+	public void sendImage(ImageMessage m) {
+		try {
+			FileOutputStream fos = new FileOutputStream("pathname.jpg");
+			fos.write(m.image);
+			fos.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		(new Sender(m.dest,m.image, m.recipient, m.sender, this)).start();
 	}
 	
 	public ArrayList<ClientNode> getClients() {
@@ -119,14 +143,31 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		// The client Doesn't necessarily know where its message must go
 		// EG. C1 -> S1 -> S3 -> S4 -> C2
 		// But to the client it will look like sending it to its host in this case "S1"
+		if(message.equals("image")) {
+			byte[] testImage = null;
+			String imagePath = "kawaii.jpg";
+			try {
+				BufferedImage originalImage = ImageIO.read(new File(imagePath));
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				ImageIO.write(originalImage, "jpg", baos);
+				baos.flush();
+				testImage = baos.toByteArray();
+				baos.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			(new Sender(dest, testImage, "L1", "L1", this)).start();
+			return;
+		}
 		if (!sending) {
 			sending = true;
 			l.out("Attempting to send message: " + message);
-			Sender2 sender;
-			sender = new Sender2(dest, message,"L1", id, this);
+			Sender sender;
+			sender = new Sender(dest, message,"L1", id, this);
 			sender.start();
 		} else {
-			Message m = new Message(message, dest, "L1");
+			Message m = new Message(message, dest, "L1", id);
 			pendingMessages.add(m);
 		}
 	}
@@ -144,7 +185,28 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	@Override
 	public void forwardMessage(SocketAddress dest, String message, String recipient, String sender) {
 		l.out("in client its: " + dest.toString());
-		(new Sender2(dest, message, recipient, sender, this)).start();
+		(new Sender(dest, message, recipient, sender, this)).start();
+	}
+	
+	public SocketAddress lookupClient(String client) {
+		for(int i = 0 ; i < clients.size();i++) {
+			if(clients.get(i).id.equals(client))
+				return clients.get(i).address;
+		}
+		return null;
+	}
+	
+	public void forwardImage(String dest, byte[] message, String sender) {
+		l.out("forwarding message");
+		SocketAddress client = lookupClient(dest);
+		if(client == null)
+			return;
+		(new Sender(client, message, dest, sender, this)).start();
+	}
+	
+	public void addImage(byte[] image) {
+		l.out("adding image");
+		gui.addImage(image);
 	}
 
 	@Override

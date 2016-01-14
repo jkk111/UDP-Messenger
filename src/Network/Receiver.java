@@ -1,14 +1,18 @@
 package Network;
 
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
+import javax.xml.bind.DatatypeConverter;
+
 import interfaces.MessageRead;
-import interfaces.MessageSend;
 import json.JsonObject;
 import json.Parser;
 import util.Logger;
@@ -24,6 +28,7 @@ public class Receiver {
 	}
 	
 	public void add(DatagramPacket p) {
+		l.out("got packet: " + p.getData().length +" bytes long");
 		String isEnd = Parser.parse(new String(p.getData())).get("end");
 		if(isEnd != null && isEnd.equals("true")) {
 			String message = "";
@@ -32,6 +37,10 @@ public class Receiver {
 			String dest = "";
 			for(int i = 0 ; i < data.size(); i++) {
 				JsonObject o = Parser.parse(data.get(i));
+				if(o.get("image") != null) {
+					parseImage(p.getSocketAddress(), data);
+					return;
+				}
 				message += o.get("message");
 				sender = o.get("sender");
 				dest = o.get("dest");
@@ -39,6 +48,7 @@ public class Receiver {
 			if(dest.equals(parent.getClientId()))
 				parent.messageReceived(message, sender);
 			else if(parent.isLaptop()){
+				// TODO (john): Change this else replies to itself, client should lookup dest
 				InetSocketAddress addr = new InetSocketAddress(p.getAddress(), 50000);
 				l.out("made: " + addr.toString());
 				parent.forwardMessage(addr, message, dest, sender);
@@ -55,6 +65,38 @@ public class Receiver {
 			connections.put(p.getSocketAddress(), data);
 		} else {
 			data.add(new String(p.getData()));
+		}
+	}
+	
+	public void parseImage(SocketAddress addr, ArrayList<String> pieces) {
+		l.out(pieces.size() +" packets in image");
+		String imageString = "";
+		String dest = "";
+		String sender = "";
+		for(int i = 0 ; i < pieces.size();i++) {
+			JsonObject o = Parser.parse(pieces.get(i));
+			imageString += o.get("image");
+			dest = o.get("dest");
+		}
+		byte[] image = DatatypeConverter.parseBase64Binary(imageString);
+
+		try {
+			FileOutputStream fos = new FileOutputStream("image.jpg");
+			BufferedWriter fos2 = new BufferedWriter(new FileWriter("image.text"));
+			fos.write(image);
+			fos2.write(imageString);
+			fos2.close();
+			fos.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		connections.remove(addr);
+		if(dest.equals(parent.getClientId())) {
+			parent.addImage(image);
+			parent.messageReceived("Sent an image!", sender);
+		} else {
+			parent.forwardImage(dest, image, sender);
 		}
 	}
 	

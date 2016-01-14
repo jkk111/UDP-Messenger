@@ -11,7 +11,7 @@ public class Logger {
 	private BufferedWriter in;
 	private BufferedWriter out;
 	private BufferedWriter err;
-	
+	boolean silent = false;
 	public Logger() {
 		try {
 		File f = new File("logs/");
@@ -33,6 +33,10 @@ public class Logger {
 		}
 	}
 	
+	public Logger(boolean silent) {
+		this();
+		this.silent = silent;
+	}
 	public void in(String text) {
 		StackTraceElement trace = Thread.currentThread().getStackTrace()[2];
 		String line = trace.getFileName().substring(0,trace.getFileName().length()-5);
@@ -42,7 +46,8 @@ public class Logger {
 		} catch (IOException e) {
 			System.err.println("error writing input to file");
 		}
-		System.out.println("in) " + text);
+		if(!silent)
+			System.out.println("in) " + text);
 	}
 	
 	public void errout(String text) {
@@ -56,7 +61,8 @@ public class Logger {
 		} catch (IOException e) {
 			System.err.println("error writing error to file");
 		}
-		System.err.println("err) " + text);
+		if(!silent)
+			System.err.println("err) " + text);
 	}
 	
 	public void out(String text) {
@@ -68,7 +74,8 @@ public class Logger {
 		} catch (IOException e) {
 			System.err.println("error writing output to file");
 		}
-		System.out.println("out) " + text);
+		if(!silent)
+			System.out.println("out) " + text);
 	}
 	
 	public void err(String text) {
@@ -80,7 +87,9 @@ public class Logger {
 		} catch (IOException e) {
 			System.err.println("error writing error to file");
 		}
-		System.err.println("err) " + text);
+
+		if(!silent)
+			System.err.println("err) " + text);
 	}
 	
 	//Used in graceful shutdown, provides some useful information
