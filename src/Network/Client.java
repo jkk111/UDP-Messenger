@@ -34,31 +34,28 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	boolean isLaptop = false;
 	Receiver receiver;
 	String id;
-	public Client(String id, boolean isLaptop) {
-		this(DEFAULT_PORT, id);
-		this.isLaptop = isLaptop;
+	int laptops, phones;
+	public Client(String id, boolean isLaptop, ArrayList<ClientNode> clients) {
+		this(DEFAULT_PORT, id, isLaptop, clients);
 	}
 	
-	public Client(String id, int port, boolean isLaptop) {
-		this(port, id);
-		this.isLaptop = isLaptop;
-		if(isLaptop)
-			try {
-				socket.setBroadcast(true);
-			} catch (SocketException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-	}
-	
-	public Client(int port, String id) {
+	public Client(int port, String id, boolean isLaptop, ArrayList<ClientNode> clients) {
 		super();
+		this.isLaptop = isLaptop;
+		this.clients = clients;
+		this.id = id;
+		pendingMessages = new ArrayList<Message>();
 		try {
-			this.id = id;
-			pendingMessages = new ArrayList<Message>();
-			clients = new ArrayList<ClientNode>();
-			gui = new GUI(this);
 			socket = new DatagramSocket(port);
+			if(isLaptop) {
+				socket.setBroadcast(true);
+			}
+		} catch (SocketException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		try {
+			gui = new GUI(this);
 			l.out("start ADDRESS: " + socket.getLocalSocketAddress());
 			l.out("Starting listener on port: " + port);
 			listener.go();
@@ -67,13 +64,24 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 			l.err(e.getClass() + "");
 			l.err(e.getMessage() + "");
 		}
+		if(isLaptop) {
+			resolveServers();
+		}
+	}
+	
+	public void resolveServers() {
+		// we need to send a resolve packet to get source of server,
+		// attempt to connect to it
+		// if works update value
+		// else route through server
+		// if phone route though server regardless
 	}
 	
 	public synchronized void onReceipt(DatagramPacket packet) {
 		JsonObject o = Parser.parse(new String(packet.getData()));
 		
 		if(o.get("request") != null) {
-			handleRequest(packet.getSocketAddress());
+			handleRequest(packet.getSocketAddress() , o.get("request").equals("laptop"));
 		}
 			
 		if(o.get("message") != null || o.get("end") != null || o.get("image") != null) {
@@ -89,12 +97,39 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		this.notify();
 	}
 	
-	public void handleRequest(SocketAddress addr) {
-		l.out("REMOTE ADDRESS: " + socket.getRemoteSocketAddress());
+	// Gives a list of clients as "L1,L2,L3,L4,C1,C2,C3,L5"
+	public String getClientsAsString() {
+		String res = "";
+		for(int i = 0; i < clients.size(); i++) {
+			if(i > 0)
+				res += ",";
+			res += clients.get(i).id;
+		}
+		return res;
+	}
+	
+	public void handleRequest(SocketAddress addr, boolean isLaptop) {
+		l.out("adding new client");
+		JsonObject o = new JsonObject();
+		if(isLaptop) {
+			o.add("id", "L"+ ++laptops);
+		} else {
+			o.add("id", "P"+ ++phones);
+		}
+		o.add("clients", getClientsAsString());
+		String m = o.toString();
+		// Send from host as opposed to sender so the client can get our socketaddress
+		DatagramPacket p = new DatagramPacket(m.getBytes(), m.length(), addr);
+		try {
+			socket.send(p);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	public static void main(String args[]) {
-		Client c = new Client("L1", true);
+		Client c = new Client("L1", true, new ArrayList<ClientNode>());
 		c.clients.add(new ClientNode(new InetSocketAddress("localhost", 50000), "L1"));
 		c.start();
 	}
@@ -151,23 +186,6 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		// The client Doesn't necessarily know where its message must go
 		// EG. C1 -> S1 -> S3 -> S4 -> C2
 		// But to the client it will look like sending it to its host in this case "S1"
-		if(message.equals("image")) {
-			byte[] testImage = null;
-			String imagePath = "kawaii.jpg";
-			try {
-				BufferedImage originalImage = ImageIO.read(new File(imagePath));
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				ImageIO.write(originalImage, "jpg", baos);
-				baos.flush();
-				testImage = baos.toByteArray();
-				baos.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			(new Sender(dest, testImage, "L1", "L1", this)).start();
-			return;
-		}
 		if (!sending) {
 			sending = true;
 			l.out("Attempting to send message: " + message);

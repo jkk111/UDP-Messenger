@@ -35,6 +35,8 @@ public class Receiver {
 			ArrayList<String> data = connections.get(p.getSocketAddress());
 			String sender = "";
 			String dest = "";
+			if(data == null)
+				return;
 			for(int i = 0 ; i < data.size(); i++) {
 				JsonObject o = Parser.parse(data.get(i));
 				if(o.get("image") != null) {

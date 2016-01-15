@@ -128,6 +128,8 @@ public class GUI extends JPanel implements ActionListener, MessageReceived, Imag
 		try {
 			BufferedImage originalImage = ImageIO.read(new File(path));
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			if(originalImage == null)
+				return;
 			ImageIO.write(originalImage, ext, baos);
 			baos.flush();
 			image = baos.toByteArray();

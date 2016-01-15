@@ -7,9 +7,11 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 
 import json.JsonObject;
 import json.Parser;
+import util.ClientNode;
 
 public class Laptop extends Thread {
 	String id;
@@ -17,9 +19,9 @@ public class Laptop extends Thread {
 	DatagramSocket listener;
 	int lId = 0;
 	int pId = 0;
-	public Laptop(String id) {
+	public Laptop(String id, ArrayList<ClientNode> clients) {
 		this.id = id;
-		client = new Client(id, true);
+		client = new Client(id, true, clients);
 		client.start();
 	}
 	
@@ -34,14 +36,21 @@ public class Laptop extends Thread {
 			s.send(p);
 			DatagramPacket response = new DatagramPacket(new byte[65536], 65536);
 			s.receive(response);
+			s.send(new DatagramPacket("OK".getBytes(), 2, response.getSocketAddress()));
+			JsonObject o = Parser.parse(new String(response.getData()));
+			String id = o.get("id");
+			String[] clientIds = o.get("clients").split(",");
+			ArrayList<ClientNode> clients = new ArrayList<ClientNode>();
+			for(int i = 0 ; i < clientIds.length; i++) {
+				clients.add(new ClientNode(response.getSocketAddress(), clientIds[i]));
+			}
 			s.close();
-			String id = Parser.parse(new String(response.getData())).get("id");
-			Laptop l = new Laptop(id);
+			Laptop l = new Laptop(id, clients);
 			l.start();
 		} catch(SocketTimeoutException e) {
 			System.out.println("Could not find a server, Registering as first server");
 			s.close();
-			Laptop l = new Laptop("L0");
+			Laptop l = new Laptop("L0", new ArrayList<ClientNode>());
 			l.start();
 		} catch (SocketException e) {
 			e.printStackTrace();
