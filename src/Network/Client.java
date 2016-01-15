@@ -128,6 +128,8 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		
 		if(o.get("PING") != null) {
 			try {
+				// This should probably be changed so it doesn't respond until it gets a reply from the source, so if ( id == source id) respond
+				// will implement saturday evening
 				socket.send(new DatagramPacket("PONG".getBytes(), 4, packet.getSocketAddress()));
 			} catch (IOException e) {
 				e.printStackTrace();
