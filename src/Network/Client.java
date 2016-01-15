@@ -24,7 +24,7 @@ import util.ClientNode;
 import util.ImageMessage;
 import util.Message;
 
-public class Client extends Node implements FinishedSending, MessageSend, MessageRead {
+public class Client extends Node implements FinishedSending, MessageSend, MessageRead, ClientUpdater {
 	public static final int DEFAULT_PORT = 50000;
 	String toSend;
 	boolean sending = false;
@@ -65,7 +65,29 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 			l.err(e.getMessage() + "");
 		}
 		if(isLaptop) {
+			laptops = Integer.parseInt(id.substring(1)) + 1;
+			int highestId = 0;
+			for(int i = 0 ; i < clients.size(); i++) {
+				ClientNode client = clients.get(i);
+				if(client.id.startsWith("P")) {
+					int clientId = Integer.parseInt(client.id.substring(1));
+					highestId = Math.max(clientId, highestId);
+				}
+			}
+			phones = highestId + 1;
 			resolveServers();
+		} else {
+
+			int highestId = 0;
+			for(int i = 0 ; i < clients.size(); i++) {
+				ClientNode client = clients.get(i);
+				if(client.id.startsWith("L")) {
+					int clientId = Integer.parseInt(client.id.substring(1));
+					highestId = Math.max(clientId, highestId);
+				}
+			}
+			laptops = highestId + 1;
+			phones = Integer.parseInt(id.substring(1));
 		}
 	}
 	
@@ -75,6 +97,10 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		// if works update value
 		// else route through server
 		// if phone route though server regardless
+		for(int i = 0 ; i < clients.size(); i++) {
+			ClientNode client = clients.get(i);
+			(new Resolver(client.address, client.id, this)).start();
+		}
 	}
 	
 	public synchronized void onReceipt(DatagramPacket packet) {
@@ -83,13 +109,36 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		if(o.get("request") != null) {
 			handleRequest(packet.getSocketAddress() , o.get("request").equals("laptop"));
 		}
+		
+		if(o.get("resolve") != null) {
+			String req = o.get("resolve");
+			for(int i = 0 ; i < clients.size(); i++) {
+				ClientNode client = clients.get(i);
+				if(client.id.equals(req)) {
+					o = new JsonObject();
+					o.add("addr", ((InetSocketAddress)client.address).getHostString());
+					try {
+						socket.send(new DatagramPacket(o.toString().getBytes(), o.toString().length(), packet.getSocketAddress()));
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}
+		
+		if(o.get("test") != null) {
+			try {
+				socket.send(new DatagramPacket("OK".getBytes(), 2, packet.getSocketAddress()));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 			
 		if(o.get("message") != null || o.get("end") != null || o.get("image") != null) {
 				receiver.add(packet);
 			try {
 				socket.send(new DatagramPacket("OK".getBytes(), 2, packet.getSocketAddress()));
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -129,14 +178,12 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	}
 	
 	public static void main(String args[]) {
-		Client c = new Client("L1", true, new ArrayList<ClientNode>());
-		c.clients.add(new ClientNode(new InetSocketAddress("localhost", 50000), "L1"));
+		Client c = new Client("L0", true, new ArrayList<ClientNode>());
 		c.start();
 	}
 
 	@Override
 	public void sendingFinished(boolean success) {
-		l.out("REMOTE ADDRESS: " + socket.getRemoteSocketAddress());
 		// So this will be used to signify that a sender has finished
 		l.out("Sending message " + (success == true ? "completed successfully" : "failed"));
 		sending = false;
@@ -176,24 +223,21 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	
 	public ArrayList<ClientNode> getClients() {
 		ArrayList<ClientNode> clients = new ArrayList<ClientNode>();
-		
+		clients.add(new ClientNode(new InetSocketAddress("localhost", 50000), this.id));
+		clients.addAll(this.clients);
 		return clients;
 	}
 
 	@Override
-	public void sendMessage(String message, InetSocketAddress dest) {
-		// By this point message should be a JSON formatted string { "DEST": "C4", "MESSAGE": "HEY JIM" }
-		// The client Doesn't necessarily know where its message must go
-		// EG. C1 -> S1 -> S3 -> S4 -> C2
-		// But to the client it will look like sending it to its host in this case "S1"
+	public void sendMessage(String message, InetSocketAddress addr, String dest) {
 		if (!sending) {
 			sending = true;
 			l.out("Attempting to send message: " + message);
 			Sender sender;
-			sender = new Sender(dest, message,"L1", id, this);
+			sender = new Sender(addr, message,dest, id, this);
 			sender.start();
 		} else {
-			Message m = new Message(message, dest, "L1", id);
+			Message m = new Message(message, addr, dest, id);
 			pendingMessages.add(m);
 		}
 	}
@@ -238,5 +282,15 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	@Override
 	public boolean isLaptop() {
 		return isLaptop;
+	}
+
+	@Override
+	public void updateClient(InetSocketAddress addr, String dest) {
+		for(int i = 0 ; i < clients.size(); i++) {
+			ClientNode client = clients.get(i);
+			if(client.id.equals(dest)) {
+				client.address = addr;
+			}
+		}
 	}
 }

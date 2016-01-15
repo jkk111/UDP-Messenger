@@ -7,7 +7,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.util.Base64;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -112,6 +111,7 @@ public class Sender extends Thread {
 		while ((index < message.length() || resend || isFinal || smallPending ) && timeouts < MAX_TIMEOUTS) {
 			try {
 				l.out("sending packet");
+				l.out(nextPacket.getAddress()+"");
 				socket.send(nextPacket);
 				DatagramPacket res = new DatagramPacket(new byte[65536], 65536);
 				socket.receive(res);

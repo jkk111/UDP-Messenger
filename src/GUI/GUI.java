@@ -17,7 +17,9 @@ import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.TimerTask;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -25,6 +27,7 @@ import javax.swing.*;
 import interfaces.ImageSelect;
 import interfaces.MessageReceived;
 import interfaces.MessageSend;
+import util.ClientNode;
 import util.ImageChooser;
 import util.Logger;
  
@@ -35,19 +38,44 @@ public class GUI extends JPanel implements ActionListener, MessageReceived, Imag
     JList list;
     public Logger log;
     MessageSend host;
-
+    ArrayList<ClientNode> clients;
     int counter = 15;
     public GUI(MessageSend host) {
         super(new GridBagLayout());
+    	clients = new ArrayList<ClientNode>();
 		log = new Logger();
 		this.host = host;
         textField = new JTextField(20);
         textField.addActionListener(this);
         model = new DefaultListModel();
         list = new JList(model);
+        list.getSelectedIndex();
         JScrollPane pane = new JScrollPane(list);
-        for (int i = 0; i < 15; i++)
-          model.addElement("C" + i);
+        TimerTask timerTask = new TimerTask() {
+			
+			@Override
+			public void run() {
+				ArrayList<ClientNode> tmpClients = host.getClients();
+				ArrayList<ClientNode> newClients = new ArrayList<ClientNode>();
+				for(int i = 0; i < tmpClients.size(); i++) {
+					boolean isUnique = true;
+					for(int j = 0 ; j < clients.size(); j++) {
+						if(tmpClients.get(i).id.equals(clients.get(j).id)) {
+							isUnique = false;
+						}
+					}
+					if(isUnique) {
+						newClients.add(tmpClients.get(i));
+					}
+				}
+				for(int i = 0 ; i < newClients.size(); i++) {
+					model.addElement(newClients.get(i).id);
+				}
+				clients.addAll(newClients);
+			}
+		};
+		java.util.Timer timer = new java.util.Timer(true);
+		timer.scheduleAtFixedRate(timerTask, 0, 5000);
         textArea = new JTextArea(10, 20);
         textArea.setEditable(false);
         JScrollPane scrollPane = new JScrollPane(textArea);
@@ -108,11 +136,17 @@ public class GUI extends JPanel implements ActionListener, MessageReceived, Imag
     }
  
     public void actionPerformed(ActionEvent evt) {
+    	if(list.getSelectedIndex() == -1) {
+    		JOptionPane.showMessageDialog(null, "Select a client from the list on the right\nbefore sending a message!");
+    		return;
+    	}
         String text = textField.getText();
         if(text.equals(""))
         	return;
-        if(host != null)
-        	host.sendMessage(textField.getText(), new InetSocketAddress("localhost", 50000));
+        if(host != null) {
+        	ClientNode client = clients.get(list.getSelectedIndex());
+        	host.sendMessage(textField.getText(), (InetSocketAddress) client.address, client.id);
+        }
         textField.setText("");
 		log.in(text);
         textArea.append("YOU: " + text + "\n");
@@ -136,7 +170,7 @@ public class GUI extends JPanel implements ActionListener, MessageReceived, Imag
 			baos.close();
 		} catch (IOException e) {}
 		log.out("sending image to client to send");
-		host.sendImage(image, "L1");
+		host.sendImage(image, clients.get(list.getSelectedIndex()).id);
     }
  
     /**
