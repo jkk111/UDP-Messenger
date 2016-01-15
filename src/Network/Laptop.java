@@ -41,6 +41,7 @@ public class Laptop extends Thread {
 			String id = o.get("id");
 			String[] clientIds = o.get("clients").split(",");
 			ArrayList<ClientNode> clients = new ArrayList<ClientNode>();
+			clients.add(new ClientNode(response.getSocketAddress(), o.get("sender")));
 			for(int i = 0 ; i < clientIds.length; i++) {
 				clients.add(new ClientNode(response.getSocketAddress(), clientIds[i]));
 			}

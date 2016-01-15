@@ -97,7 +97,7 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		// if works update value
 		// else route through server
 		// if phone route though server regardless
-		for(int i = 0 ; i < clients.size(); i++) {
+		for(int i = 1 ; i < clients.size(); i++) {
 			ClientNode client = clients.get(i);
 			(new Resolver(client.address, client.id, this)).start();
 		}
@@ -126,9 +126,9 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 			}
 		}
 		
-		if(o.get("test") != null) {
+		if(o.get("PING") != null) {
 			try {
-				socket.send(new DatagramPacket("OK".getBytes(), 2, packet.getSocketAddress()));
+				socket.send(new DatagramPacket("PONG".getBytes(), 4, packet.getSocketAddress()));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -160,6 +160,7 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	public void handleRequest(SocketAddress addr, boolean isLaptop) {
 		l.out("adding new client");
 		JsonObject o = new JsonObject();
+		o.add("sender", this.id);
 		if(isLaptop) {
 			o.add("id", "L"+ ++laptops);
 		} else {

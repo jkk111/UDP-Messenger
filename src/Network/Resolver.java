@@ -59,7 +59,7 @@ public class Resolver extends Thread {
 		if(sent) {
 			timeouts = 0;
 			JsonObject o = new JsonObject();
-			o.add("test", dest);
+			o.add("PING", dest);
 			nextPacket = new DatagramPacket(o.toString().getBytes(), o.toString().length(), newAddr);
 			sent = false;
 			while (timeouts < MAX_TIMEOUTS && !sent) {
