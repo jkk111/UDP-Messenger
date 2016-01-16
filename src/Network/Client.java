@@ -165,8 +165,10 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		JsonObject o = new JsonObject();
 		o.add("sender", this.id);
 		if(isLaptop) {
+			clients.add(new ClientNode(addr, "L" + laptops));
 			o.add("id", "L"+ laptops++);
 		} else {
+			clients.add(new ClientNode(addr, "P" + phones));
 			o.add("id", "P"+ phones++);
 		}
 		o.add("clients", getClientsAsString());
