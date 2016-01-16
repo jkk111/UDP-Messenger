@@ -37,7 +37,7 @@ public class Phone {
 			s.setBroadcast(true);
 			s.setSoTimeout(5000);
 			String registerString = "{ \"request\": \"phone\" }";
-			DatagramPacket p = new DatagramPacket(registerString.getBytes(), registerString.length(), InetAddress.getByName("255.255.255.255"), 50000);
+			DatagramPacket p = new DatagramPacket(registerString.getBytes(), registerString.length(), InetAddress.getByName("192.168.0.255"), 50000);
 			s.send(p);
 			DatagramPacket response = new DatagramPacket(new byte[65536], 65536);
 			s.receive(response);
