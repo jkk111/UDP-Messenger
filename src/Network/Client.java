@@ -217,7 +217,11 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	
 	
 	public void sendImage(byte[] image, String dest) {
-		SocketAddress addr = lookupClient(dest);
+		SocketAddress addr;
+		if(dest.equals(this.id))
+			addr = new InetSocketAddress("localhost", 50000);
+		else
+			addr = lookupClient(dest);
 		if(addr == null)
 			return;
 		
