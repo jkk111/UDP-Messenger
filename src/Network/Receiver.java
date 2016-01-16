@@ -82,17 +82,17 @@ public class Receiver {
 		}
 		byte[] image = DatatypeConverter.parseBase64Binary(imageString);
 
-		try {
-			FileOutputStream fos = new FileOutputStream("image.jpg");
-			BufferedWriter fos2 = new BufferedWriter(new FileWriter("image.text"));
-			fos.write(image);
-			fos2.write(imageString);
-			fos2.close();
-			fos.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+//		try {
+//			FileOutputStream fos = new FileOutputStream("image.jpg");
+//			BufferedWriter fos2 = new BufferedWriter(new FileWriter("image.text"));
+//			fos.write(image);
+//			fos2.write(imageString);
+//			fos2.close();
+//			fos.close();
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 		connections.remove(addr);
 		if(dest.equals(parent.getClientId())) {
 			parent.addImage(image);

@@ -48,6 +48,7 @@ public class Resolver extends Thread {
 				socket.receive(p);
 				JsonObject o = Parser.parse(new String(p.getData()));
 				newAddr = new InetSocketAddress(o.get("addr"), 50000);
+				sent = true;
 			} catch (SocketTimeoutException e) {
 				timeouts++;
 				l.out("timeout on original host");
