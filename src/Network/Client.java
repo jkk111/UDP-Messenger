@@ -131,6 +131,7 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 				// This should probably be changed so it doesn't respond until it gets a reply from the source, so if ( id == source id) respond
 				// will implement saturday evening
 				socket.send(new DatagramPacket("PONG".getBytes(), 4, packet.getSocketAddress()));
+				// here we should forward on the ping and the sender and dest and return a pong when it reaches the end
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -164,9 +165,9 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		JsonObject o = new JsonObject();
 		o.add("sender", this.id);
 		if(isLaptop) {
-			o.add("id", "L"+ ++laptops);
+			o.add("id", "L"+ laptops++);
 		} else {
-			o.add("id", "P"+ ++phones);
+			o.add("id", "P"+ phones++);
 		}
 		o.add("clients", getClientsAsString());
 		String m = o.toString();
