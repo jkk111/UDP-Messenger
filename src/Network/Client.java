@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;
@@ -111,7 +112,8 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		
 		if(o.get("request") != null) {
 			el.l.out("client: " + packet.getSocketAddress() + ":" + new String(packet.getData()));
-			handleRequest(packet.getSocketAddress() , o.get("request").equals("laptop"));
+			l.out("addr: " + packet.getAddress());
+			handleRequest(packet.getAddress(), packet.getPort(), o.get("request").equals("laptop"));
 		}
 		
 		if(o.get("resolve") != null) {
@@ -179,21 +181,21 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		*/
 	}
 	
-	public void handleRequest(SocketAddress addr, boolean isLaptop) {
+	public void handleRequest(InetAddress addr, int port, boolean isLaptop) {
 		l.out("adding new client");
 		JsonObject o = new JsonObject();
 		o.add("sender", this.id);
 		if(isLaptop) {
-			clients.add(new ClientNode(addr, "L" + laptops));
+			clients.add(new ClientNode(new InetSocketAddress(addr, 50000), "L" + laptops));
 			o.add("id", "L"+ laptops++);
 		} else {
-			clients.add(new ClientNode(addr, "P" + phones));
+			clients.add(new ClientNode(new InetSocketAddress(addr, 50000), "P" + phones));
 			o.add("id", "P"+ phones++);
 		}
 		o.add("clients", getClientsAsString());
 		String m = o.toString();
 		// Send from host as opposed to sender so the client can get our socketaddress
-		DatagramPacket p = new DatagramPacket(m.getBytes(), m.length(), addr);
+		DatagramPacket p = new DatagramPacket(m.getBytes(), m.length(), new InetSocketAddress(addr, port));
 		try {
 			socket.send(p);
 		} catch (IOException e) {
