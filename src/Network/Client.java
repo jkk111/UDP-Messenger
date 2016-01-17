@@ -108,6 +108,18 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	}
 	
 	public synchronized void onReceipt(DatagramPacket packet) {
+		
+		/*
+		 * if packet is a message, do whatever it already does,
+		 *  else (when the packet is an lsr packet/should be the only other type of packet/so far anyway)
+		 *  	send my list to all neighbours	
+		 *  	if (sender already marked){
+		 *  		do nothing
+		 *  	} else {
+		 *  		mark sender
+		 *  		forward packet to all neighbours
+		 * 		}
+		 */
 		JsonObject o = Parser.parse(new String(packet.getData()));
 		
 		if(o.get("request") != null) {
