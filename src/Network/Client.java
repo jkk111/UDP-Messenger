@@ -195,6 +195,16 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 				}
 			}				
 		}*/
+		
+	}
+	
+	public boolean sameSubnet(String first, String second) {
+		System.out.println(first +":"+ first);
+		String[] firstArray = first.split("\\.");
+		String[] secondArray = second.split("\\.");
+		if(firstArray.length < 4 || secondArray.length < 4)
+			return false;
+		return firstArray[2].equals(secondArray[2]);
 	}
 	
 	public void handleRequest(InetAddress addr, int port, boolean isLaptop) {
