@@ -23,7 +23,7 @@ public class Parser {
 		String next = "\"";
 		boolean isEnclosed = true;
 		for(int i = 1 ; i < data.length(); i++) {
-			if(data.charAt(i) == ':' && data.charAt(i - 1) != '\\' ||
+			if(data.charAt(i) == ':' && data.charAt(i - 1) != '\\' && !isEnclosed ||
 			   data.charAt(i) == ',' && !isEnclosed) {
 				all.add(next);
 				next = "";

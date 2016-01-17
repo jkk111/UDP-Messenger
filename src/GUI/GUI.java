@@ -59,6 +59,8 @@ public class GUI extends JPanel implements ActionListener, MessageReceived, Imag
 				ArrayList<ClientNode> newClients = new ArrayList<ClientNode>();
 				for(int i = 0; i < tmpClients.size(); i++) {
 					boolean isUnique = true;
+					if(host.getClientId().equals(tmpClients.get(i).id))
+						continue;
 					for(int j = 0 ; j < clients.size(); j++) {
 						if(tmpClients.get(i).id.equals(clients.get(j).id)) {
 							isUnique = false;
@@ -144,8 +146,8 @@ public class GUI extends JPanel implements ActionListener, MessageReceived, Imag
         if(text.equals(""))
         	return;
         if(host != null) {
-        	ClientNode client = clients.get(list.getSelectedIndex());
-        	host.sendMessage(textField.getText(), (InetSocketAddress) client.address, client.id);
+        	String client = (String) list.getSelectedValue();
+        	host.sendMessage(textField.getText(), client);
         }
         textField.setText("");
 		log.in(text);

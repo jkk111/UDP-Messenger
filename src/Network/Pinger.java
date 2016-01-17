@@ -43,8 +43,9 @@ public class Pinger extends Thread {
 				socket.send(nextPacket);
 				DatagramPacket p = new DatagramPacket(new byte[65536], 65536);
 				socket.receive(p);
+				gotResponse = true;
 			} catch(SocketTimeoutException e) {
-				e.printStackTrace();
+				timeouts++;
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

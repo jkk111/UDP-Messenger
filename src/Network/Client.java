@@ -12,6 +12,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Queue;
 
 import javax.imageio.ImageIO;
@@ -163,7 +164,27 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	}
 	
 	public void buildTableDVR(ArrayList<ClientNode> newOrder) {
-		
+		for(ClientNode node : clients) {
+			newOrder.add(getBestPath(node));
+		}
+	}
+	
+	public ClientNode getBestPath(ClientNode node) {
+		String bestRoute = "";
+		int bestTime = node.pingTime;
+		for(ClientNode child : clients) {
+			if(child.getClient(node.id) != null) {
+				int basePing = child.pingTime;
+				if(basePing + child.getClient(node.id).pingTime < bestTime) {
+					bestTime = basePing + child.getClient(node.id).pingTime;
+					bestRoute = child.id;
+				}
+			}
+		}
+		if(bestRoute.equals("")) {
+			bestRoute = node.id;
+		}
+		return new ClientNode(getClient(bestRoute).address, node.id);
 	}
 	
 	public boolean inList(ArrayList<ClientNode> list, ClientNode child) {
@@ -185,6 +206,10 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	}
 	
 	public synchronized void onReceipt(DatagramPacket packet) {
+		if(packet == null) {
+			latch.countDown();
+			return;			
+		}
 		
 		/*
 		 * if packet is a message, do whatever it already does,
@@ -204,6 +229,19 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 			String sender = o.get("sender");
 			if(this.id.equals(sender) && amMarked || !this.id.equals(sender) && getClient(sender).DVRReceived && getClient(sender).lastData.equals(o.get("dvr")))
 				return;
+			if(!isLaptop) {
+				String clients[] = o.get("dvr").split(",");
+				boolean added = false;
+				for(int i = 0 ; i < clients.length; i++) {
+					String id = clients[i].split(":")[0];
+					if(getClient(id) == null && !id.equals(this.id)) {
+						added = true;
+						this.clients.add(new ClientNode(new InetSocketAddress(packet.getAddress(), 50000), id)); 
+					}
+				}
+				if(!added)
+					return;
+			}
 			amMarked = true;
 			markClient(sender);
 			ArrayList<SocketAddress> directlyConnected = new ArrayList<SocketAddress>();
@@ -215,11 +253,14 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 					(new Echo(packet)).start();
 				}		
 			}
+			l.out("outside json its: " + o.get("dvr"));
 			String[] clients = o.get("dvr").split(",");
+			l.out(Arrays.toString(clients));
 			ArrayList<ClientNode> adjacent = new ArrayList<ClientNode>();
 			for(int i = 0 ; i < clients.length; i++) {
 				String[] parts = clients[i].split(":");
-				String id = parts[i];
+				String id = parts[0];
+				l.out(Arrays.toString(parts));
 				int pingTime = Integer.parseInt(parts[1]);
 				ClientNode tmp = new ClientNode(lookupClient(id), id);
 				tmp.pingTime = pingTime;
@@ -227,12 +268,22 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 			}
 			getClient(sender).adjacent = adjacent;
 			distanceVectorRouting();
-			checkAllMarked();
+			if(isLaptop)
+				checkAllMarked();
 		}
 		if(o.get("lsr") != null) {
 			String sender = o.get("sender");
 			if(this.id.equals(sender) && amMarked || getClient(sender).LSRReceived && getClient(sender).lastData.equals(o.get("lsr")) )
 				return;
+			if(!isLaptop) {
+				String clients[] = o.get("dvr").split(",");
+				for(int i = 0 ; i < clients.length; i++) {
+					String id = clients[i].split(":")[0];
+					if(getClient(id) == null) {
+						this.clients.add(new ClientNode(new InetSocketAddress(packet.getAddress(), 50000), id)); 
+					}
+				}
+			}
 			amMarked = true;
 			markClient(sender);
 			l.out(sender);
@@ -251,7 +302,8 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 				adjacent.add(new ClientNode(lookupClient(sender), clients[i]));
 			}
 			linkStateRouting();
-			checkAllMarked();
+			if(isLaptop)
+				checkAllMarked();
 			
 		}
 		
@@ -344,7 +396,8 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		for(int i = 0 ; i < adjacent.size(); i++ ) {
 			(new Pinger(adjacent.get(i).address, adjacent.get(i).id, this)).start();
 		}
-		checkAllMarked();
+		if(isLaptop)
+			checkAllMarked();
 	}
 	
 	public void linkStateRouting() {
@@ -375,7 +428,8 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 			p.setSocketAddress(directlyConnected.get(i));
 			(new Echo(p)).start();
 		}
-		checkAllMarked();
+		if(isLaptop)
+			checkAllMarked();
 	}
 	
 	public boolean sameSubnet(String first, String second) {
@@ -402,6 +456,7 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		String m = o.toString();
 		// Send from host as opposed to sender so the client can get our socketaddress
 		DatagramPacket p = new DatagramPacket(m.getBytes(), m.length(), new InetSocketAddress(addr, port));
+		l.out("connected to new client on: " + addr);
 		try {
 			socket.send(p);
 		} catch (IOException e) {
@@ -464,12 +519,11 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	
 	public ArrayList<ClientNode> getClients() {
 		ArrayList<ClientNode> clients = new ArrayList<ClientNode>();
-		clients.add(new ClientNode(new InetSocketAddress("localhost", 50000), this.id));
+//		clients.add(new ClientNode(new InetSocketAddress("localhost", 50000), this.id));
 		clients.addAll(this.clients);
 		return clients;
 	}
 
-	@Override
 	public void sendMessage(String message, InetSocketAddress addr, String dest) {
 		if (!sending) {
 			sending = true;
@@ -479,6 +533,23 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 			sender.start();
 		} else {
 			Message m = new Message(message, addr, dest, id);
+			pendingMessages.add(m);
+		}
+	}
+
+	@Override
+	public void sendMessage(String message, String dest) {
+		ClientNode client = getClient(dest);
+		if(client == null)
+			return;
+		if (!sending) {
+			sending = true;
+			l.out("Attempting to send message: " + message);
+			Sender sender;
+			sender = new Sender(client.address, message,dest, id, this);
+			sender.start();
+		} else {
+			Message m = new Message(message, (InetSocketAddress) client.address, dest, id);
 			pendingMessages.add(m);
 		}
 	}
@@ -545,6 +616,13 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 
 	@Override
 	public void pingComplete(String id, int timeTaken) {
+		l.out(id);
+		if(getClient(id) == null) {
+			for(int i = 0 ; i < clients.size(); i++ ) {
+				l.out("ids: "+ clients.get(i).id);
+			}
+			return;
+		}
 		getClient(id).pingTime = timeTaken;
 		ArrayList<ClientNode> adjacent = getAdjacent();
 		JsonObject o = new JsonObject();
