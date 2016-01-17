@@ -9,4 +9,5 @@ public interface MessageRead {
 	public boolean isLaptop();
 	public void addImage(byte[] image);
 	public void forwardImage(String dest, byte[] image, String sender);
+	public SocketAddress lookupClient(String client);
 }

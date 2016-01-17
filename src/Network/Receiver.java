@@ -51,8 +51,10 @@ public class Receiver {
 				parent.messageReceived(message, sender);
 			else if(parent.isLaptop()){
 				// TODO (john): Change this else replies to itself, client should lookup dest
-				InetSocketAddress addr = new InetSocketAddress(p.getAddress(), 50000);
-				l.out("made: " + addr.toString());
+				SocketAddress addr = parent.lookupClient(dest);
+				if(addr == null)
+					return;
+				l.out("made: " + addr);
 				parent.forwardMessage(addr, message, dest, sender);
 			} else {
 				l.err("packet not for this phone, dropping");
