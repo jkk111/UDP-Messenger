@@ -179,6 +179,16 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 			it marks this list as received and forwards it to all other neighbours.
 			once all of these lists have been exchanged, each client builds its routing table
 		*/
+		
+	}
+	
+	public boolean sameSubnet(String first, String second) {
+		System.out.println(first +":"+ first);
+		String[] firstArray = first.split("\\.");
+		String[] secondArray = second.split("\\.");
+		if(firstArray.length < 4 || secondArray.length < 4)
+			return false;
+		return firstArray[2].equals(secondArray[2]);
 	}
 	
 	public void handleRequest(InetAddress addr, int port, boolean isLaptop) {
