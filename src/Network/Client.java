@@ -25,7 +25,6 @@ import json.Parser;
 import util.ClientNode;
 import util.ImageMessage;
 import util.Message;
-import util.extendedLog;
 
 public class Client extends Node implements FinishedSending, MessageSend, MessageRead, ClientUpdater, PingClient {
 	public static final int DEFAULT_PORT = 50000;
@@ -39,7 +38,6 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	String id;
 	int laptops, phones;
 	boolean amMarked = false;
-	extendedLog el;
 	String localSubnet = "192.168.0.255";
 	boolean lsr = false;
 	public Client(String id, boolean isLaptop, ArrayList<ClientNode> clients, String subnet, boolean useLSR) {
@@ -60,7 +58,6 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		this.isLaptop = isLaptop;
 		this.clients = clients;
 		this.id = id;
-		el = new extendedLog();
 		pendingMessages = new ArrayList<Message>();
 		try {
 			socket = new DatagramSocket(port);
@@ -68,7 +65,6 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 				socket.setBroadcast(true);
 			}
 		} catch (SocketException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		try {
@@ -117,11 +113,6 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	}
 	
 	public void resolveServers() {
-		// we need to send a resolve packet to get source of server,
-		// attempt to connect to it
-		// if works update value
-		// else route through server
-		// if phone route though server regardless
 		for(int i = 1 ; i < clients.size(); i++) {
 			ClientNode client = clients.get(i);
 			(new Resolver(client.address, client.id, this)).start();
@@ -210,20 +201,6 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 			latch.countDown();
 			return;			
 		}
-		
-		/*
-		 * if packet is a message, do whatever it already does,
-		 *  else (when the packet is an lsr packet/should be the only other type of packet/so far anyway)
-		 *  	send my list to all neighbours	
-		 *  	if (sender already marked){
-		 *  		do nothing
-		 *  	} else {
-		 *  		mark sender
-		 *  		store received list
-		 *  		forward packet to all neighbours
-		 * 		}
-		 */
-		
 		JsonObject o = Parser.parse(new String(packet.getData()));
 		if(o.get("dvr") != null) {
 			String sender = o.get("sender");
@@ -331,10 +308,7 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		
 		if(o.get("PING") != null) {
 			try {
-				// This should probably be changed so it doesn't respond until it gets a reply from the source, so if ( id == source id) respond
-				// will implement saturday evening
 				socket.send(new DatagramPacket("PONG".getBytes(), 4, packet.getSocketAddress()));
-				// here we should forward on the ping and the sender and dest and return a pong when it reaches the end
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -388,10 +362,6 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	}
 	
 	public void distanceVectorRouting() {
-		//ping neybahs
-		//store latency + ids
-		//tell clients how long messages take to each other
-		//curl up in corner and cry
 		ArrayList<ClientNode> adjacent = getAdjacent();
 		for(int i = 0 ; i < adjacent.size(); i++ ) {
 			(new Pinger(adjacent.get(i).address, adjacent.get(i).id, this)).start();
@@ -401,13 +371,6 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	}
 	
 	public void linkStateRouting() {
-		/* 	Flooding
-			When a new client (clientA) joins, client A sends a list of it's neighbours to its neighbours.
-			When a client receives a list, it checks if this list has already been received.
-			If the list has already been received, it does nothing, if it has not been received,
-			it marks this list as received and forwards it to all other neighbours.
-			once all of these lists have been exchanged, each client builds its routing table
-		*/
 		JsonObject o = new JsonObject();
 		o.add("sender", this.id);
 		ArrayList<SocketAddress> directlyConnected = new ArrayList<SocketAddress>();
@@ -460,7 +423,6 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		try {
 			socket.send(p);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		if(lsr)
@@ -498,7 +460,6 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 			fos.write(m.image);
 			fos.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		(new Sender(m.dest,m.image, m.recipient, m.sender, this)).start();
@@ -519,7 +480,6 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	
 	public ArrayList<ClientNode> getClients() {
 		ArrayList<ClientNode> clients = new ArrayList<ClientNode>();
-//		clients.add(new ClientNode(new InetSocketAddress("localhost", 50000), this.id));
 		clients.addAll(this.clients);
 		return clients;
 	}

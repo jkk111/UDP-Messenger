@@ -204,31 +204,4 @@ public class GUI extends JPanel implements ActionListener, MessageReceived, Imag
     	};
     	return l;
     }
-
-	public static void main(String[] args) {
-        //Schedule a job for the event dispatch thread:
-        //creating and showing this application's GUI.
-//        javax.swing.SwingUtilities.invokeLater(new Runnable() {
-//            public void run() {
-//                createAndShowGUI();
-//            }
-//        });
-		GUI gui = new GUI(null);
-		byte[] testImage = null;
-		String imagePath = "kawaii.jpg";
-		try {
-			BufferedImage originalImage = ImageIO.read(new File(imagePath));
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			ImageIO.write(originalImage, "jpg", baos);
-			baos.flush();
-			testImage = baos.toByteArray();
-			baos.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		gui.addImage(testImage);
-		gui.addImage(testImage);
-		gui.addImage(testImage);
-    }
 }

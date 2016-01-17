@@ -30,7 +30,6 @@ public class Pinger extends Thread {
 			o.add("PING", dest);
 			nextPacket = new DatagramPacket(o.toString().getBytes(), o.toString().length(), addr);
 		} catch (SocketException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}

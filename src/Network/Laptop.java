@@ -70,7 +70,6 @@ public class Laptop extends Thread {
 			try {
 				s.setBroadcast(false);
 			} catch (SocketException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 			s.close();

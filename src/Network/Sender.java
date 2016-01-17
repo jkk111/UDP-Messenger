@@ -32,7 +32,6 @@ public class Sender extends Thread {
 		try {
 			socket = new DatagramSocket();
 		} catch (SocketException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		this.dest = dest;
@@ -48,7 +47,6 @@ public class Sender extends Thread {
 		try {
 			socket = new DatagramSocket();
 		} catch (SocketException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		this.dest = dest;
@@ -73,7 +71,6 @@ public class Sender extends Thread {
 		try {
 			socket = new DatagramSocket();
 		} catch (SocketException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		l.out(""+message.length());

@@ -67,13 +67,10 @@ public class Phone {
 		} catch(SocketTimeoutException e) {
 			System.err.println("Could not find a server, please start a laptop then try again");
 		} catch (SocketException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}

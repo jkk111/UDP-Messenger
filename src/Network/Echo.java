@@ -21,7 +21,6 @@ public class Echo extends Thread {
 		try {
 			socket = new DatagramSocket();
 		} catch (SocketException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -41,7 +40,6 @@ public class Echo extends Thread {
 			} catch (SocketTimeoutException e) {
 				timeouts++;			
 		    } catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}

@@ -13,7 +13,6 @@ import json.Parser;
 import util.Logger;
 
 public class Resolver extends Thread {
-	// TODO (john): implement a threaded client resolver
 	DatagramSocket socket;
 	DatagramPacket nextPacket;
 	String dest;
@@ -74,7 +73,6 @@ public class Resolver extends Thread {
 					timeouts++;
 					l.out("timeout on new host");
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}

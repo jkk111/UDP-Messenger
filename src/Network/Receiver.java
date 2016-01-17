@@ -50,7 +50,6 @@ public class Receiver {
 			if(dest.equals(parent.getClientId()))
 				parent.messageReceived(message, sender);
 			else if(parent.isLaptop()){
-				// TODO (john): Change this else replies to itself, client should lookup dest
 				SocketAddress addr = parent.lookupClient(dest);
 				if(addr == null)
 					return;
@@ -83,18 +82,6 @@ public class Receiver {
 			dest = o.get("dest");
 		}
 		byte[] image = DatatypeConverter.parseBase64Binary(imageString);
-
-//		try {
-//			FileOutputStream fos = new FileOutputStream("image.jpg");
-//			BufferedWriter fos2 = new BufferedWriter(new FileWriter("image.text"));
-//			fos.write(image);
-//			fos2.write(imageString);
-//			fos2.close();
-//			fos.close();
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
 		connections.remove(addr);
 		if(dest.equals(parent.getClientId())) {
 			parent.addImage(image);
