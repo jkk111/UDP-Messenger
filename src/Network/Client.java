@@ -26,7 +26,7 @@ import util.ImageMessage;
 import util.Message;
 import util.extendedLog;
 
-public class Client extends Node implements FinishedSending, MessageSend, MessageRead, ClientUpdater {
+public class Client extends Node implements FinishedSending, MessageSend, MessageRead, ClientUpdater, PingClient {
 	public static final int DEFAULT_PORT = 50000;
 	String toSend;
 	boolean sending = false;
@@ -40,12 +40,14 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	boolean amMarked = false;
 	extendedLog el;
 	String localSubnet = "192.168.0.255";
-	public Client(String id, boolean isLaptop, ArrayList<ClientNode> clients, String subnet) {
+	boolean lsr = false;
+	public Client(String id, boolean isLaptop, ArrayList<ClientNode> clients, String subnet, boolean useLSR) {
 		this(DEFAULT_PORT, id, isLaptop, clients);
 		this.localSubnet = subnet;
 		l.out(subnet);
 		l.out(clients.toString());
 		l.out(id+isLaptop+clients.toString()+subnet);
+		this.lsr = useLSR;
 	}
 	
 	public Client(String id, boolean isLaptop, ArrayList<ClientNode> clients) {
@@ -126,32 +128,23 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	}
 	
 	public void checkAllMarked() {
-		boolean allMarked = true;
 		for(int i = 0 ; i < clients.size(); i++) {
-			if(clients.get(i).id.startsWith("L") && !clients.get(i).LSRReceived) {
-				allMarked = false;
+			if(clients.get(i).id.startsWith("L") && (!clients.get(i).LSRReceived || !clients.get(i).DVRReceived)) {
+				return;
 			}
 		}
-		l.err(allMarked+"");
-		l.err(allMarked+"");
-		l.err(allMarked+"");
-		l.err(allMarked+"");
-		l.err(allMarked+"");
-		l.err(allMarked+"");
-		l.err(allMarked+"");
-		l.err(allMarked+"");
-		l.err(allMarked+"");
-		l.err(allMarked+"");
-		if(allMarked) {
-			ArrayList<ClientNode> newOrder = new ArrayList<ClientNode>();
+		ArrayList<ClientNode> newOrder = new ArrayList<ClientNode>();
+		if(lsr) {
 			for(int i = 0 ; i < clients.size(); i++) {
 				if(sameSubnet(localSubnet, clients.get(i).address +"")) {
 					newOrder.add(clients.get(i));
 				}
 			}
 			buildTable(newOrder);
-			clients = newOrder;
+		} else {
+			buildTableDVR(newOrder);
 		}
+		clients = newOrder;
 	}
 	
 	public void buildTable(ArrayList<ClientNode> newOrder) {
@@ -167,6 +160,10 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 				}
 			}
 		} while (added);
+	}
+	
+	public void buildTableDVR(ArrayList<ClientNode> newOrder) {
+		
 	}
 	
 	public boolean inList(ArrayList<ClientNode> list, ClientNode child) {
@@ -203,10 +200,38 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		 */
 		
 		JsonObject o = Parser.parse(new String(packet.getData()));
-		
+		if(o.get("dvr") != null) {
+			String sender = o.get("sender");
+			if(this.id.equals(sender) && amMarked || !this.id.equals(sender) && getClient(sender).DVRReceived && getClient(sender).lastData.equals(o.get("dvr")))
+				return;
+			amMarked = true;
+			markClient(sender);
+			ArrayList<SocketAddress> directlyConnected = new ArrayList<SocketAddress>();
+			for (int i = 0; i < clients.size(); i++) {
+				if(clients.get(i).id.equals(this.id))
+						continue;
+				if(sameSubnet(clients.get(i).address + "", localSubnet)) {
+					packet.setSocketAddress(clients.get(i).address);
+					(new Echo(packet)).start();
+				}		
+			}
+			String[] clients = o.get("dvr").split(",");
+			ArrayList<ClientNode> adjacent = new ArrayList<ClientNode>();
+			for(int i = 0 ; i < clients.length; i++) {
+				String[] parts = clients[i].split(":");
+				String id = parts[i];
+				int pingTime = Integer.parseInt(parts[1]);
+				ClientNode tmp = new ClientNode(lookupClient(id), id);
+				tmp.pingTime = pingTime;
+				adjacent.add(tmp);
+			}
+			getClient(sender).adjacent = adjacent;
+			distanceVectorRouting();
+			checkAllMarked();
+		}
 		if(o.get("lsr") != null) {
 			String sender = o.get("sender");
-			if(this.id.equals(sender) || getClient(sender).LSRReceived || amMarked)
+			if(this.id.equals(sender) && amMarked || getClient(sender).LSRReceived && getClient(sender).lastData.equals(o.get("lsr")) )
 				return;
 			amMarked = true;
 			markClient(sender);
@@ -226,7 +251,6 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 				adjacent.add(new ClientNode(lookupClient(sender), clients[i]));
 			}
 			linkStateRouting();
-			
 			checkAllMarked();
 			
 		}
@@ -276,6 +300,16 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		this.notify();
 	}
 	
+	public ArrayList<ClientNode> getAdjacent() {
+		ArrayList<ClientNode> adjacent = new ArrayList<ClientNode>();
+		for(int i = 0 ; i < clients.size(); i++) {
+			if(sameSubnet(clients.get(i).address+"", localSubnet)) {
+				adjacent.add(clients.get(i));
+			}
+		}
+		return adjacent;
+	}
+	
 	// Gives a list of clients as "L1,L2,L3,L4,C1,C2,C3,L5"
 	public String getClientsAsString() {
 		String res = "";
@@ -286,9 +320,31 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		}
 		return res;
 	}
+
+	public String getClientsAsString(ArrayList<ClientNode> clients) {
+		String res = "";
+		boolean hasFirst = false;
+		for(int i = 0; i < clients.size(); i++) {
+			if(clients.get(i).pingTime == 0)
+				continue;
+			if(hasFirst)
+				res += ",";
+			hasFirst = true;
+			res += clients.get(i).id + ":"+clients.get(i).pingTime;
+		}
+		return res;
+	}
 	
 	public void distanceVectorRouting() {
-		// eric plez
+		//ping neybahs
+		//store latency + ids
+		//tell clients how long messages take to each other
+		//curl up in corner and cry
+		ArrayList<ClientNode> adjacent = getAdjacent();
+		for(int i = 0 ; i < adjacent.size(); i++ ) {
+			(new Pinger(adjacent.get(i).address, adjacent.get(i).id, this)).start();
+		}
+		checkAllMarked();
 	}
 	
 	public void linkStateRouting() {
@@ -299,16 +355,6 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 			it marks this list as received and forwards it to all other neighbours.
 			once all of these lists have been exchanged, each client builds its routing table
 		*/
-		l.err("starting LSR");
-		l.err("starting LSR");
-		l.err("starting LSR");
-		l.err("starting LSR");
-		l.err("starting LSR");
-		l.err("starting LSR");
-		l.err("starting LSR");
-		l.err("starting LSR");
-		l.err("starting LSR");
-		l.err("starting LSR");
 		JsonObject o = new JsonObject();
 		o.add("sender", this.id);
 		ArrayList<SocketAddress> directlyConnected = new ArrayList<SocketAddress>();
@@ -326,10 +372,10 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		o.add("lsr", clientList);
 		DatagramPacket p = new DatagramPacket(o.toString().getBytes(), o.toString().length());
 		for (int i = 0; i < directlyConnected.size(); i++) {
-			l.err("hello fucking world");
 			p.setSocketAddress(directlyConnected.get(i));
 			(new Echo(p)).start();
 		}
+		checkAllMarked();
 	}
 	
 	public boolean sameSubnet(String first, String second) {
@@ -362,11 +408,14 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		linkStateRouting();
+		if(lsr)
+			linkStateRouting();
+		else
+			distanceVectorRouting();
 	}
 	
 	public static void main(String args[]) {
-		Client c = new Client("L0", true, new ArrayList<ClientNode>(), "192.168.0.255");
+		Client c = new Client("L0", true, new ArrayList<ClientNode>(), "192.168.0.255", false);
 		c.start();
 	}
 
@@ -491,6 +540,20 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 			if(client.id.equals(dest)) {
 				client.address = addr;
 			}
+		}
+	}
+
+	@Override
+	public void pingComplete(String id, int timeTaken) {
+		getClient(id).pingTime = timeTaken;
+		ArrayList<ClientNode> adjacent = getAdjacent();
+		JsonObject o = new JsonObject();
+		o.add("sender", this.id);
+		o.add("dvr", getClientsAsString(adjacent));
+		DatagramPacket p = new DatagramPacket(o.toString().getBytes(), o.toString().length());
+		for(int i = 0 ; i < adjacent.size(); i++) {
+			p.setSocketAddress(lookupClient(adjacent.get(i).id));
+			(new Echo(p)).start();
 		}
 	}
 }

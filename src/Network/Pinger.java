@@ -51,7 +51,7 @@ public class Pinger extends Thread {
 		}
 		if(timeouts < MAX_TIMEOUTS) {
 			int timeElapsed = (int) (new Date().getTime() - start.getTime());
-			parent.pingComplete(timeElapsed);
+			parent.pingComplete(dest, timeElapsed);
 		}
 	}
 }
