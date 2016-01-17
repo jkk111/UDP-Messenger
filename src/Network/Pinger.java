@@ -22,6 +22,7 @@ public class Pinger extends Thread {
 	public Pinger(SocketAddress addr, String dest, PingClient p) {
 		try {
 			socket = new DatagramSocket();
+			socket.setSoTimeout(10000);
 			this.dest = dest;
 			this.addr = addr;
 			parent = p;

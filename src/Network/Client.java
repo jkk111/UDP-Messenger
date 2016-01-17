@@ -37,6 +37,7 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	Receiver receiver;
 	String id;
 	int laptops, phones;
+	boolean amMarked = false;
 	extendedLog el;
 	String localSubnet = "192.168.0.255";
 	public Client(String id, boolean isLaptop, ArrayList<ClientNode> clients, String subnet) {
@@ -131,6 +132,16 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 				allMarked = false;
 			}
 		}
+		l.err(allMarked+"");
+		l.err(allMarked+"");
+		l.err(allMarked+"");
+		l.err(allMarked+"");
+		l.err(allMarked+"");
+		l.err(allMarked+"");
+		l.err(allMarked+"");
+		l.err(allMarked+"");
+		l.err(allMarked+"");
+		l.err(allMarked+"");
 		if(allMarked) {
 			ArrayList<ClientNode> newOrder = new ArrayList<ClientNode>();
 			for(int i = 0 ; i < clients.size(); i++) {
@@ -167,6 +178,15 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		return false;
 	}
 	
+	public ClientNode getClient(String id) {
+		for(int i = 0 ; i < clients.size(); i++) {
+			if(clients.get(i).id.equals(id)) {
+				return clients.get(i);
+			}
+		}
+		return null;
+	}
+	
 	public synchronized void onReceipt(DatagramPacket packet) {
 		
 		/*
@@ -186,10 +206,11 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		
 		if(o.get("lsr") != null) {
 			String sender = o.get("sender");
-			if(this.id.equals(sender))
+			if(this.id.equals(sender) || getClient(sender).LSRReceived || amMarked)
 				return;
+			amMarked = true;
 			markClient(sender);
-
+			l.out(sender);
 			ArrayList<SocketAddress> directlyConnected = new ArrayList<SocketAddress>();
 			for (int i = 0; i < clients.size(); i++) {
 				if(clients.get(i).id.equals(this.id))
@@ -204,6 +225,8 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 			for(int i = 0 ; i < clients.length; i++) {
 				adjacent.add(new ClientNode(lookupClient(sender), clients[i]));
 			}
+			linkStateRouting();
+			
 			checkAllMarked();
 			
 		}
@@ -276,6 +299,16 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 			it marks this list as received and forwards it to all other neighbours.
 			once all of these lists have been exchanged, each client builds its routing table
 		*/
+		l.err("starting LSR");
+		l.err("starting LSR");
+		l.err("starting LSR");
+		l.err("starting LSR");
+		l.err("starting LSR");
+		l.err("starting LSR");
+		l.err("starting LSR");
+		l.err("starting LSR");
+		l.err("starting LSR");
+		l.err("starting LSR");
 		JsonObject o = new JsonObject();
 		o.add("sender", this.id);
 		ArrayList<SocketAddress> directlyConnected = new ArrayList<SocketAddress>();
@@ -293,6 +326,7 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		o.add("lsr", clientList);
 		DatagramPacket p = new DatagramPacket(o.toString().getBytes(), o.toString().length());
 		for (int i = 0; i < directlyConnected.size(); i++) {
+			l.err("hello fucking world");
 			p.setSocketAddress(directlyConnected.get(i));
 			(new Echo(p)).start();
 		}
