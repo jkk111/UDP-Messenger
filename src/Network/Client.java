@@ -127,12 +127,31 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		 *  		forward packet to all neighbours
 		 * 		}
 		 */
+		
 		JsonObject o = Parser.parse(new String(packet.getData()));
+		
+		if(o.get("lsr") != null) {
+			String sender = o.get("sender");
+			if(this.id.equals(sender))
+				return;
+			markClient(sender);
+
+			ArrayList<SocketAddress> directlyConnected = new ArrayList<SocketAddress>();
+			for (int i = 0; i < clients.size(); i++) {
+				if(clients.get(i).id.equals(this.id))
+						continue;
+				if(sameSubnet(clients.get(i).address + "", localSubnet)) {
+					packet.setSocketAddress(clients.get(i).address);
+					(new Echo(packet)).start();
+				}		
+			}
+		}
 		
 		if(o.get("request") != null) {
 			el.l.out("client: " + packet.getSocketAddress() + ":" + new String(packet.getData()));
 			l.out("addr: " + packet.getAddress());
 			handleRequest(packet.getAddress(), packet.getPort(), o.get("request").equals("laptop"));
+			linkStateRouting();
 		}
 		
 		if(o.get("resolve") != null) {
@@ -335,6 +354,14 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	public void forwardMessage(SocketAddress dest, String message, String recipient, String sender) {
 		l.out("in client its: " + dest.toString());
 		(new Sender(dest, message, recipient, sender, this)).start();
+	}
+	
+	public void markClient(String client) {
+		for (int i = 0; i < clients.size(); i++) {
+			if(clients.get(i).id.equals(client)) {
+				clients.get(i).LSRReceived = true;
+			}
+		}
 	}
 	
 	public SocketAddress lookupClient(String client) {
