@@ -38,6 +38,12 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	String id;
 	int laptops, phones;
 	extendedLog el;
+	String localSubnet = "192.168.0.255";
+	public Client(String id, boolean isLaptop, ArrayList<ClientNode> clients, String subnet) {
+		this(DEFAULT_PORT, id, isLaptop, clients);
+		this.localSubnet = subnet;
+	}
+	
 	public Client(String id, boolean isLaptop, ArrayList<ClientNode> clients) {
 		this(DEFAULT_PORT, id, isLaptop, clients);
 	}
@@ -193,21 +199,24 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		*/
 		JsonObject o = new JsonObject();
 		o.add("sender", this.id);
-		
-		/*	PsudoCode
-			int subnet = getIP.subnet();
-			for (int i = 0; i < clients.size(); i++) {
-				if (clients(i).subnet = subnet && client is not me){
-					o.add("lsr", client.toString());
-					add client to list;
-				}
-				DatagramPacket p = new DatagramPacket(o.toString().getBytes(), o.toString().length());
-				for (int i = 0; i < clientsList.size(); i++){
-					send p to neighbour client
-				}
-			}				
-		}*/
-		
+		ArrayList<SocketAddress> directlyConnected = new ArrayList<SocketAddress>();
+		String clientList = "";
+		for (int i = 0; i < clients.size(); i++) {
+			if(clients.get(i).id.equals(this.id))
+					continue;
+			if(sameSubnet(clients.get(i).address + "", localSubnet)) {
+				if(!clientList.equals("")) 
+					clientList +=",";
+				clientList += clients.get(i).id;
+				directlyConnected.add(clients.get(i).address);
+			}		
+		}
+		o.add("lsr", clientList);
+		DatagramPacket p = new DatagramPacket(o.toString().getBytes(), o.toString().length());
+		for (int i = 0; i < directlyConnected.size(); i++) {
+			p.setSocketAddress(directlyConnected.get(i));
+			(new Echo(p)).start();
+		}
 	}
 	
 	public boolean sameSubnet(String first, String second) {

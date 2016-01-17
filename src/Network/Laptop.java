@@ -9,6 +9,8 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
+import javax.swing.JOptionPane;
+
 import json.JsonObject;
 import json.Parser;
 import util.ClientNode;
@@ -19,20 +21,21 @@ public class Laptop extends Thread {
 	DatagramSocket listener;
 	int lId = 0;
 	int pId = 0;
-	public Laptop(String id, ArrayList<ClientNode> clients) {
+	public Laptop(String id, ArrayList<ClientNode> clients, String subnet) {
 		this.id = id;
-		client = new Client(id, true, clients);
+		client = new Client(id, true, clients, subnet);
 		client.start();
 	}
 	
 	public static void main(String[] args) {
+		String subnet = JOptionPane.showInputDialog(null, "Please enter a valid subnet eg. 192.168.137.255", "192.168.0.255");
 		DatagramSocket s = null;
 		try {
 			s = new DatagramSocket();
 			s.setBroadcast(true);
 			s.setSoTimeout(1000);
 			String registerString = "{ \"type\": \"request\", \"request\": \"laptop\" }";
-			DatagramPacket p = new DatagramPacket(registerString.getBytes(), registerString.length(), InetAddress.getByName("192.168.0.255"), 50000);
+			DatagramPacket p = new DatagramPacket(registerString.getBytes(), registerString.length(), InetAddress.getByName(subnet), 50000);
 			s.send(p);
 			DatagramPacket response = new DatagramPacket(new byte[65536], 65536);
 			s.receive(response);
@@ -46,12 +49,12 @@ public class Laptop extends Thread {
 				clients.add(new ClientNode(response.getSocketAddress(), clientIds[i]));
 			}
 			s.close();
-			Laptop l = new Laptop(id, clients);
+			Laptop l = new Laptop(id, clients, subnet);
 			l.start();
 		} catch(SocketTimeoutException e) {
 			System.out.println("Could not find a server, Registering as first server");
 			s.close();
-			Laptop l = new Laptop("L0", new ArrayList<ClientNode>());
+			Laptop l = new Laptop("L0", new ArrayList<ClientNode>(), subnet);
 			l.start();
 		} catch (SocketException e) {
 			e.printStackTrace();
