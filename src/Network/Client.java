@@ -160,6 +160,14 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		return res;
 	}
 	
+	public void distanceVectorRouting() {
+		// eric plz
+	}
+	
+	public void linkStateRouting() {
+		// tom do the thing -- or at least describe it in heavy detail
+	}
+	
 	public void handleRequest(SocketAddress addr, boolean isLaptop) {
 		l.out("adding new client");
 		JsonObject o = new JsonObject();
