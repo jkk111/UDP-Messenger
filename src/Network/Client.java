@@ -84,10 +84,10 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 					highestId = Math.max(clientId, highestId);
 				}
 			}
-			phones = highestId + 1;
+			if(highestId > 0)
+				phones = highestId + 1;
 			resolveServers();
 		} else {
-
 			int highestId = 0;
 			for(int i = 0 ; i < clients.size(); i++) {
 				ClientNode client = clients.get(i);
@@ -148,10 +148,8 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		}
 		
 		if(o.get("request") != null) {
-			el.l.out("client: " + packet.getSocketAddress() + ":" + new String(packet.getData()));
 			l.out("addr: " + packet.getAddress());
 			handleRequest(packet.getAddress(), packet.getPort(), o.get("request").equals("laptop"));
-			linkStateRouting();
 		}
 		
 		if(o.get("resolve") != null) {
@@ -269,6 +267,7 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		linkStateRouting();
 	}
 	
 	public static void main(String args[]) {
