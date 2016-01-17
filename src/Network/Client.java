@@ -23,6 +23,7 @@ import json.Parser;
 import util.ClientNode;
 import util.ImageMessage;
 import util.Message;
+import util.extendedLog;
 
 public class Client extends Node implements FinishedSending, MessageSend, MessageRead, ClientUpdater {
 	public static final int DEFAULT_PORT = 50000;
@@ -35,6 +36,7 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	Receiver receiver;
 	String id;
 	int laptops, phones;
+	extendedLog el;
 	public Client(String id, boolean isLaptop, ArrayList<ClientNode> clients) {
 		this(DEFAULT_PORT, id, isLaptop, clients);
 	}
@@ -44,6 +46,7 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		this.isLaptop = isLaptop;
 		this.clients = clients;
 		this.id = id;
+		el = new extendedLog();
 		pendingMessages = new ArrayList<Message>();
 		try {
 			socket = new DatagramSocket(port);
@@ -107,6 +110,7 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		JsonObject o = Parser.parse(new String(packet.getData()));
 		
 		if(o.get("request") != null) {
+			el.l.out("client: " + packet.getSocketAddress());
 			handleRequest(packet.getSocketAddress() , o.get("request").equals("laptop"));
 		}
 		
