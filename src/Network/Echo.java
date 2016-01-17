@@ -6,7 +6,7 @@ import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
-public class Echo {
+public class Echo extends Thread {
 	public static final int MAX_TIMEOUTS = 10;
 	DatagramSocket socket;
 	DatagramPacket echoPacket;

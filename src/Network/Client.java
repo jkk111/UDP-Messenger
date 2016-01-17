@@ -179,6 +179,22 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 			it marks this list as received and forwards it to all other neighbours.
 			once all of these lists have been exchanged, each client builds its routing table
 		*/
+		JsonObject o = new JsonObject();
+		o.add("sender", this.id);
+		
+		/*	PsudoCode
+			int subnet = getIP.subnet();
+			for (int i = 0; i < clients.size(); i++) {
+				if (clients(i).subnet = subnet && client is not me){
+					o.add("lsr", client.toString());
+					add client to list;
+				}
+				DatagramPacket p = new DatagramPacket(o.toString().getBytes(), o.toString().length());
+				for (int i = 0; i < clientsList.size(); i++){
+					send p to neighbour client
+				}
+			}				
+		}*/
 	}
 	
 	public void handleRequest(InetAddress addr, int port, boolean isLaptop) {
