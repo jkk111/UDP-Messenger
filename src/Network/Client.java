@@ -123,6 +123,7 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		 *  		do nothing
 		 *  	} else {
 		 *  		mark sender
+		 *  		store received list
 		 *  		forward packet to all neighbours
 		 * 		}
 		 */
