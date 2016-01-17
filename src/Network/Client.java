@@ -166,11 +166,17 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	}
 	
 	public void distanceVectorRouting() {
-		// eric plz
+		// eric plez
 	}
 	
 	public void linkStateRouting() {
-		// tom do the thing -- or at least describe it in heavy detail
+		/* 	Flooding
+			When a new client (clientA) joins, client A sends a list of it's neighbours to its neighbours.
+			When a client receives a list, it checks if this list has already been received.
+			If the list has already been received, it does nothing, if it has not been received,
+			it marks this list as received and forwards it to all other neighbours.
+			once all of these lists have been exchanged, each client builds its routing table
+		*/
 	}
 	
 	public void handleRequest(SocketAddress addr, boolean isLaptop) {
