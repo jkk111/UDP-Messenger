@@ -65,6 +65,7 @@ public class Resolver extends Thread {
 			sent = false;
 			while (timeouts < MAX_TIMEOUTS && !sent) {
 				DatagramPacket p = new DatagramPacket(new byte[65536], 65536);
+				l.out("sending ping plz");
 				try {
 					socket.send(nextPacket);
 					socket.receive(p);

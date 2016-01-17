@@ -116,6 +116,7 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 				ClientNode client = clients.get(i);
 				if(client.id.equals(req)) {
 					o = new JsonObject();
+					l.out("found client" + client.id);
 					o.add("addr", ((InetSocketAddress)client.address).getHostString());
 					try {
 						socket.send(new DatagramPacket(o.toString().getBytes(), o.toString().length(), packet.getSocketAddress()));
