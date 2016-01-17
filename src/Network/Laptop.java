@@ -29,6 +29,7 @@ public class Laptop extends Thread {
 	
 	public static void main(String[] args) {
 		String subnet = JOptionPane.showInputDialog(null, "Please enter a valid subnet eg. 192.168.137.255", "192.168.0.255");
+		System.out.println(subnet);
 		DatagramSocket s = null;
 		try {
 			s = new DatagramSocket();
@@ -48,11 +49,18 @@ public class Laptop extends Thread {
 			for(int i = 0 ; i < clientIds.length; i++) {
 				clients.add(new ClientNode(response.getSocketAddress(), clientIds[i]));
 			}
+			s.setBroadcast(false);
 			s.close();
 			Laptop l = new Laptop(id, clients, subnet);
 			l.start();
 		} catch(SocketTimeoutException e) {
 			System.out.println("Could not find a server, Registering as first server");
+			try {
+				s.setBroadcast(false);
+			} catch (SocketException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 			s.close();
 			Laptop l = new Laptop("L0", new ArrayList<ClientNode>(), subnet);
 			l.start();

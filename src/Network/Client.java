@@ -42,6 +42,9 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	public Client(String id, boolean isLaptop, ArrayList<ClientNode> clients, String subnet) {
 		this(DEFAULT_PORT, id, isLaptop, clients);
 		this.localSubnet = subnet;
+		l.out(subnet);
+		l.out(clients.toString());
+		l.out(id+isLaptop+clients.toString()+subnet);
 	}
 	
 	public Client(String id, boolean isLaptop, ArrayList<ClientNode> clients) {
@@ -271,7 +274,7 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 	}
 	
 	public static void main(String args[]) {
-		Client c = new Client("L0", true, new ArrayList<ClientNode>());
+		Client c = new Client("L0", true, new ArrayList<ClientNode>(), "192.168.0.255");
 		c.start();
 	}
 
