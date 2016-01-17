@@ -104,6 +104,14 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		}
 	}
 	
+	public void updateClientAdjacent(String client, ArrayList<ClientNode> adjacent) {
+		for(int i = 0 ; i < clients.size(); i++) {
+			if(clients.get(i).id.equals(client)) {
+				clients.get(i).setAdjacent(adjacent);
+			}
+		}
+	}
+	
 	public void resolveServers() {
 		// we need to send a resolve packet to get source of server,
 		// attempt to connect to it
@@ -114,6 +122,49 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 			ClientNode client = clients.get(i);
 			(new Resolver(client.address, client.id, this)).start();
 		}
+	}
+	
+	public void checkAllMarked() {
+		boolean allMarked = true;
+		for(int i = 0 ; i < clients.size(); i++) {
+			if(clients.get(i).id.startsWith("L") && !clients.get(i).LSRReceived) {
+				allMarked = false;
+			}
+		}
+		if(allMarked) {
+			ArrayList<ClientNode> newOrder = new ArrayList<ClientNode>();
+			for(int i = 0 ; i < clients.size(); i++) {
+				if(sameSubnet(localSubnet, clients.get(i).address +"")) {
+					newOrder.add(clients.get(i));
+				}
+			}
+			buildTable(newOrder);
+			clients = newOrder;
+		}
+	}
+	
+	public void buildTable(ArrayList<ClientNode> newOrder) {
+		boolean added = false;
+		do {
+			added = false;
+			for(ClientNode node : newOrder) {
+				for(ClientNode child : node.adjacent) {
+					if(!inList(newOrder, child)) {
+						newOrder.add(child);
+						added = true;
+					}
+				}
+			}
+		} while (added);
+	}
+	
+	public boolean inList(ArrayList<ClientNode> list, ClientNode child) {
+		for(int i = 0; i < list.size(); i++) {
+			if(list.get(i).id.equals(child.id)) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	public synchronized void onReceipt(DatagramPacket packet) {
@@ -148,6 +199,13 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 					(new Echo(packet)).start();
 				}		
 			}
+			String[] clients = o.get("lsr").split(",");
+			ArrayList<ClientNode> adjacent = new ArrayList<ClientNode>();
+			for(int i = 0 ; i < clients.length; i++) {
+				adjacent.add(new ClientNode(lookupClient(sender), clients[i]));
+			}
+			checkAllMarked();
+			
 		}
 		
 		if(o.get("request") != null) {

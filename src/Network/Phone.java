@@ -15,6 +15,7 @@ import javax.swing.JOptionPane;
 import json.JsonObject;
 import json.Parser;
 import util.ClientNode;
+import util.Logger;
 
 public class Phone {
 	String id;
@@ -34,6 +35,7 @@ public class Phone {
 	 * For a phone when we get a response, it should set all socket addresses to its parennt/ server
 	 */
 	public static void main(String[] args) {
+		Logger l = new Logger();
 		String subnet = JOptionPane.showInputDialog(null, "Please enter a valid subnet eg. 192.168.137.255", "192.168.0.255");
 		try {
 			DatagramSocket s = new DatagramSocket();
@@ -42,6 +44,7 @@ public class Phone {
 			String registerString = "{ \"request\": \"phone\" }";
 			DatagramPacket p = new DatagramPacket(registerString.getBytes(), registerString.length(), InetAddress.getByName(subnet), 50000);
 			s.send(p);
+			l.out("here");
 			DatagramPacket response = new DatagramPacket(new byte[65536], 65536);
 			s.receive(response);
 			s.send(new DatagramPacket("OK".getBytes(), 2, response.getSocketAddress()));
