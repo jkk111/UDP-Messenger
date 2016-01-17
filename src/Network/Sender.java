@@ -43,6 +43,7 @@ public class Sender extends Thread {
 	public Sender(SocketAddress dest, String message, String recipient, String sender, FinishedSending f) {
 		l = new Logger();
 		l.out("sending message to: " + dest.toString());
+		l.in("message: " + message + ", dest: " + recipient + ", sender: " + sender);
 		onFinish = f;
 		try {
 			socket = new DatagramSocket();

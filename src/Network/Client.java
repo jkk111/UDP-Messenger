@@ -110,7 +110,7 @@ public class Client extends Node implements FinishedSending, MessageSend, Messag
 		JsonObject o = Parser.parse(new String(packet.getData()));
 		
 		if(o.get("request") != null) {
-			el.l.out("client: " + packet.getSocketAddress());
+			el.l.out("client: " + packet.getSocketAddress() + ":" + new String(packet.getData()));
 			handleRequest(packet.getSocketAddress() , o.get("request").equals("laptop"));
 		}
 		
