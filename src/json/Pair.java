@@ -1,5 +1,7 @@
 package json;
-
+/*
+ * Pair object used for key, value pairs.
+ */
 public class Pair<T extends Comparable<T>> {
 	String key;
 	T value;

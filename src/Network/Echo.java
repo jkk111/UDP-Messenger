@@ -7,7 +7,9 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
 import util.Logger;
-
+/*
+ * Echo module, used to relay messages to destination client.
+ */
 public class Echo extends Thread {
 	public static final int MAX_TIMEOUTS = 10;
 	Logger l;

@@ -1,7 +1,9 @@
 package util;
 import java.net.SocketAddress;
 import java.util.ArrayList;
-
+/*
+ * Node object used when calculating shortest path to destination.
+ */
 public class ClientNode {
 	public SocketAddress address;
 	public String id;

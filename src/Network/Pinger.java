@@ -10,7 +10,9 @@ import java.util.Date;
 
 import interfaces.PingClient;
 import json.JsonObject;
-
+/*
+ * Pinger module sends a ping-like packet to detect round-trip time from source to destination.
+ */
 public class Pinger extends Thread {
 	DatagramSocket socket;
 	DatagramPacket nextPacket;

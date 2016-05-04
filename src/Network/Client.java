@@ -25,7 +25,9 @@ import json.Parser;
 import util.ClientNode;
 import util.ImageMessage;
 import util.Message;
-
+/*
+ * Client Module.
+ */
 public class Client extends Node implements FinishedSending, MessageSend, MessageRead, ClientUpdater, PingClient {
 	public static final int DEFAULT_PORT = 50000;
 	String toSend;

@@ -14,7 +14,9 @@ import javax.swing.JOptionPane;
 import json.JsonObject;
 import json.Parser;
 import util.ClientNode;
-
+/*
+ * Laptop & router module.
+ */
 public class Laptop extends Thread {
 	String id;
 	Client client;

@@ -1,7 +1,9 @@
 package util;
 
 import java.net.InetSocketAddress;
-
+/*
+ * Basic message data type used when queuing messages.
+ */
 public class Message {
 	public String message;
 	public InetSocketAddress dest;

@@ -17,6 +17,9 @@ import json.JsonObject;
 import json.Parser;
 import util.Logger;
 
+/*
+ * Receiver, handles receiving messages.
+ */
 public class Receiver {
 	Hashtable<SocketAddress, ArrayList<String>> connections;
 	MessageRead parent;

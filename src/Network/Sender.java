@@ -13,7 +13,9 @@ import javax.xml.bind.DatatypeConverter;
 import interfaces.FinishedSending;
 import json.JsonObject;
 import util.Logger;
-
+/*
+ * Threaded message sender to avoid blocking on the main thread.
+ */
 public class Sender extends Thread {
 	boolean isLarge = false;
 	public static final int MAX_MESSAGE_SIZE = 65000;

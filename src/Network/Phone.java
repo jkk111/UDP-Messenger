@@ -16,7 +16,9 @@ import json.JsonObject;
 import json.Parser;
 import util.ClientNode;
 import util.Logger;
-
+/*
+ * Phone module, Phones must have all messages routed through nearest laptop.
+ */
 public class Phone {
 	String id;
 	Client client;

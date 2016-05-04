@@ -1,6 +1,7 @@
 package GUI;
 
 /*
+ * Gui for the messenger.
  * Based heavily on oracle textdemo.java
  * https://docs.oracle.com/javase/tutorial/uiswing/components/textfield.html
  */

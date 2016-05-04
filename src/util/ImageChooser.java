@@ -6,7 +6,9 @@ import java.awt.event.ActionListener;
 import javax.swing.JFileChooser;
 
 import GUI.GUI;
-
+/*
+ * Simple GUI plugin that allows choosing an image which then callsback to the gui thread.
+ */
 public class ImageChooser implements ActionListener  {
 	GUI gui;
 	Logger l;

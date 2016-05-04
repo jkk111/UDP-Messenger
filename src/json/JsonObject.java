@@ -1,6 +1,8 @@
 package json;
 import java.util.ArrayList;
-
+/*
+ * Really basic json "like" class that resembles json and can be used to serialize messages.
+ */
 public class JsonObject {
 	ArrayList<Pair> pairs;
 	public JsonObject(ArrayList<ArrayList<String>> data) {

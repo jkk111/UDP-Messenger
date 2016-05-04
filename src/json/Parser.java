@@ -6,7 +6,7 @@ import util.Logger;
 
 public class Parser {
 	/*
-	 * 
+	 * Parses JSON "like" strings into a json "like" format
 	 */
 	public static JsonObject parse(String data, String delimiter) {
 		Logger l = new Logger();

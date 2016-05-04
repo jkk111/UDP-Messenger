@@ -6,7 +6,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
+/*
+ * Logger used to debug networking traffic, outputs line numbers methods and messages.
+ */
 public class Logger {
 	private BufferedWriter in;
 	private BufferedWriter out;

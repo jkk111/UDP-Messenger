@@ -11,7 +11,9 @@ import interfaces.ClientUpdater;
 import json.JsonObject;
 import json.Parser;
 import util.Logger;
-
+/*
+ * Resolver "handshake" sender to ensure messages are sent successfully.
+ */
 public class Resolver extends Thread {
 	DatagramSocket socket;
 	DatagramPacket nextPacket;

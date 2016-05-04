@@ -6,7 +6,9 @@ import java.net.DatagramSocket;
 import java.util.concurrent.CountDownLatch;
 
 import util.Logger;
-
+/*
+ * Main Networking component of the messenger.
+ */
 public abstract class Node extends Thread {
 	CountDownLatch latch;
 	DatagramSocket socket;
